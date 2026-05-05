@@ -6,6 +6,8 @@
 
 [Read the English Guide](./vibe-coding-guide-en.md) · [中文 README](./README_zh.md) · [中文教程](./vibe-coding-guide-zh.md)
 
+[English PDF](./vibe-coding-guide-en.pdf) · [中文 PDF](./vibe-coding-guide-zh.pdf)
+
 ![Guide](https://img.shields.io/badge/type-practical%20guide-111827)
 ![Languages](https://img.shields.io/badge/languages-English%20%7C%20Chinese-2563eb)
 ![Format](https://img.shields.io/badge/format-Markdown-0f766e)
@@ -29,6 +31,8 @@ The goal is not to "let AI code for you." The goal is to become a better operato
 |---|---|
 | Read the full English tutorial | [vibe-coding-guide-en.md](./vibe-coding-guide-en.md) |
 | Read the full Chinese tutorial | [vibe-coding-guide-zh.md](./vibe-coding-guide-zh.md) |
+| Download the English PDF | [vibe-coding-guide-en.pdf](./vibe-coding-guide-en.pdf) |
+| Download the Chinese PDF | [vibe-coding-guide-zh.pdf](./vibe-coding-guide-zh.pdf) |
 | Open the Chinese README | [README_zh.md](./README_zh.md) |
 | Skim the core workflow first | Chapters 1-5 |
 | Learn parallel agent work | Chapters 6-9 |
@@ -95,7 +99,9 @@ Vibe Coding works when this loop is explicit. Every phase should be observable, 
 ├── README.md                  # English repository introduction
 ├── README_zh.md               # Chinese repository introduction
 ├── vibe-coding-guide-en.md    # Full English tutorial
-└── vibe-coding-guide-zh.md    # Full Chinese tutorial
+├── vibe-coding-guide-en.pdf   # English tutorial as PDF
+├── vibe-coding-guide-zh.md    # Full Chinese tutorial
+└── vibe-coding-guide-zh.pdf   # Chinese tutorial as PDF
 ```
 
 ## How To Use This Guide
