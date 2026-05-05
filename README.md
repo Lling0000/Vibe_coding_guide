@@ -4,7 +4,7 @@
 
 **Turn AI coding from chaotic prompting into an engineering workflow.**
 
-[Read the English Guide](./vibe-coding-guide-en.md) · [中文说明](./README_zh.md) · [中文教程](./vibe-coding-guide-zh.md)
+[Read the English Guide](./vibe-coding-guide-en.md) · [中文 README](./README_zh.md) · [中文教程](./vibe-coding-guide-zh.md)
 
 ![Guide](https://img.shields.io/badge/type-practical%20guide-111827)
 ![Languages](https://img.shields.io/badge/languages-English%20%7C%20Chinese-2563eb)
@@ -29,7 +29,7 @@ The goal is not to "let AI code for you." The goal is to become a better operato
 |---|---|
 | Read the full English tutorial | [vibe-coding-guide-en.md](./vibe-coding-guide-en.md) |
 | Read the full Chinese tutorial | [vibe-coding-guide-zh.md](./vibe-coding-guide-zh.md) |
-| Share the Chinese repository intro | [README_zh.md](./README_zh.md) |
+| Open the Chinese README | [README_zh.md](./README_zh.md) |
 | Skim the core workflow first | Chapters 1-5 |
 | Learn parallel agent work | Chapters 6-9 |
 | Build team-level practice | Chapters 10-13 |
