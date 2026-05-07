@@ -1,6 +1,6 @@
 # Vibe Coding: A Practical Field Guide
 
-> Vibe Coding is not just "asking AI to write code." It is a way to collaborate with AI agents as working members of a software team. This guide covers the full loop: starting a project, giving agents context, reviewing their output, managing long sessions, using subagents, and shipping safely.
+> Vibe Coding is not just "asking AI to write code." It is a way to collaborate with AI agents as working members of a software team. This guide covers the full loop, from cold start (the early phase of a project before any code or conventions exist) through long-term maintenance: starting a project, giving agents context, reviewing their output, managing long sessions, using subagents, and shipping safely.
 
 ---
 
@@ -96,6 +96,8 @@ Before editing files, tell me:
 
 This catches bad direction early.
 
+> 💡 **On Plan modes**: Claude Code, Codex (CLI/App), and Cursor have largely converged here. The agent proposes a few candidate plans (A/B/C), you can add a D, and once a draft is settled you choose to revise further or execute. The interaction is now nearly identical across these tools, so the "plan first, then act" habit transfers cleanly between them.
+
 Useful constraints:
 
 ```text
@@ -112,6 +114,17 @@ Stop. This is going in the wrong direction. Reset the plan and explain a smaller
 ```
 
 Letting a wrong session continue usually creates more code to revert and more context pollution.
+
+> 💡 **"Undo" mechanisms across tools**:
+> - **Codex (CLI/App)**: `/fork` branches off a new conversation thread from any earlier turn. This is a fork of **conversation history**, not a git branch.
+> - **Claude Code**: `/rewind` rolls both the conversation and the code snapshot back to a saved checkpoint.
+> - **Cursor**: "Restore Checkpoint" works similarly to `/rewind`.
+>
+> These are orthogonal to **git worktrees**:
+> - Conversation fork / rewind / checkpoint restore = switch **conversation state** (same directory, history rewound).
+> - Worktree = switch **directory** (a separate git checkout that isolates the agent's working area).
+>
+> All three tools now support both layers, and you can stack them — e.g. let an agent work inside a dedicated worktree, and rewind inside it when something goes wrong, while the main checkout stays untouched.
 
 ### 1.4 Decompose, Compress, and Switch Agents at the Right Time
 
@@ -141,7 +154,7 @@ The agent's context window is a limited budget. If you fill it with old logs, ir
 
 ## 2. Specs: The Starting Point
 
-A spec is a clear description of what you want the agent to build. It can be a short chat message, a Markdown document, or an issue.
+A spec is a clear description of what you want the agent to build. It can be a short chat message, a Markdown document, or an issue (a ticket on GitHub/GitLab/etc. used to record tasks, bugs, or requirements — essentially a structured description, which makes it a natural fit for a spec; agents can also read an issue link directly).
 
 ### 2.1 What Makes a Good Spec
 
@@ -319,6 +332,39 @@ Avoid:
 
 Keep `AGENTS.md` short enough to be useful. Around 200-400 lines is often enough for a real project.
 
+### 3.8 Which Language Should You Write It In?
+
+**Short answer: agents don't care.** They read English, Chinese, mixed, and other languages equally well. The choice is a team UX question, not a technical one.
+
+| Situation | Recommendation |
+|---|---|
+| Solo or small team, all working in one language | Write in your team's working language |
+| Mixed team with some cross-region collaboration | Mixed style: prose in the working language, code/commands in English |
+| Open source project aimed at international contributors | English |
+| Cross-border team where English is the working language | English |
+
+The most common pattern in real engineering is **mixed**:
+
+- **Code, commands, paths, library names, API names → English.** They're already English in the source; translating them is awkward.
+- **Explanations, conventions, rationale, business terms, "why" → the team's native language.** Native prose captures nuance better, especially for implicit knowledge.
+
+```markdown
+## Project Conventions
+
+- Commit messages must follow Conventional Commits (e.g., `feat(auth): add OTP login`).
+- Use `pkg/errors.Wrap` for error handling; never `return err` directly.
+- Test command: `make test`; coverage must stay above 70%.
+
+## Red Lines (NEVER)
+
+- Do not edit anything under `auth/` without architect sign-off.
+- Handlers must never call the DB directly; go through the service layer.
+```
+
+**The one anti-pattern to avoid**: writing stilted, "professional-sounding" English (or any other language) when the team isn't fluent. An AGENTS.md that's awkward to read is one nobody updates, and that's the slow path to rot. Natural beats fancy.
+
+> 💡 **Implicit knowledge especially benefits from your native language.** The most valuable parts of `AGENTS.md` (the things `/init` can't capture — conventions, traps, red lines, historical decisions) carry subtle context. Native prose lets you say "**absolutely never** touch `auth/`" with the right intensity, and agents pick up that nuance.
+
 ---
 
 ## 4. Cold Starts: Joining or Creating a Project
@@ -358,35 +404,171 @@ When joining someone else's project, do not start with:
 Add feature X.
 ```
 
-Start with discovery:
+**Step 1: Use `/init` to draft an initial AGENTS.md**
+
+Claude Code and Codex (CLI/App) both ship with a built-in `/init` slash command that scans the repo and generates a first draft of `CLAUDE.md`/`AGENTS.md`:
 
 ```text
-Scan the repository and draft AGENTS.md.
-Do not modify application code.
-Identify framework, commands, directory responsibilities, and risky areas.
+> /init
 ```
 
-Then go deeper:
+> 💡 **Two clarifications people often ask about**:
+> 1. **`/init` isn't "you write the prompt."** It's a built-in slash command backed by a curated official prompt. You just type `/init`, and the agent scans the repo, infers the project, creates the file (Claude Code writes `CLAUDE.md`, Codex writes `AGENTS.md`) and fills it in. One command, not "you craft a prompt for it to run."
+> 2. **Does the file still matter once `/init` is done? Yes — more than ever.** `/init` is a one-shot generator. The `CLAUDE.md`/`AGENTS.md` file lives on after that and is **read at the start of every session** as the project's persistent context. `/init` produces the first draft; the file then evolves on its own as you and the agent add to it. The longer the project runs, the more valuable the file becomes.
+
+> 📝 **How is the file kept up to date afterward?** Three options. The first two are everyday; the third is rare:
+>
+> 1. **Edit it manually (most common).** It's just Markdown. Open it and edit, no different from a README.
+> 2. **Ask the agent to update it during normal conversation (recommended).** No special command — just say:
+>    ```
+>    > Add "all commit messages must follow Conventional Commits" to the conventions section of CLAUDE.md.
+>    > Review CLAUDE.md and flag anything that looks stale, so I can decide what to remove.
+>    ```
+>    The agent uses the Edit tool to update the file. This is the most natural ongoing-maintenance flow.
+> 3. **Rerun `/init` (⚠️ not recommended for updates).** `/init` is designed for from-scratch generation, not incremental edits. If the file already exists, the tools usually detect it and ask before overwriting; even when overwriting works, it discards the hand-written implicit knowledge that's the most valuable part of the file. Only consider rerunning when the project itself has gone through a major structural change (language, framework swap) and you genuinely want to start over.
+>
+> **In one line**: `/init` is for cold start, not maintenance. Maintain by hand-editing or by asking the agent in chat. The file should grow over time.
+
+`/init` typically does this:
+- reads README, `package.json`/`go.mod`/`Cargo.toml`, etc.
+- infers framework, build tool, and test commands
+- maps directory structure and module responsibilities
+- writes a first-draft `AGENTS.md` (or `CLAUDE.md`) at the repo root
+
+#### A concrete example: what `/init` runs internally + what it produces
+
+> ⚠️ **Disclosure**: Anthropic and OpenAI haven't published the exact official `/init` prompt. The prompt below is a **behavior-equivalent reconstruction** (the goal is to show what `/init` is asking the agent to do); the generated `CLAUDE.md` is a **realistic but trimmed example** of what you'd actually get on a typical Node.js + TypeScript project.
+
+**The kind of prompt `/init` runs under the hood** (equivalent version):
+
+```
+You've just entered a new repository. Scan the project and produce a CLAUDE.md
+(or AGENTS.md) so that future Claude / Codex instances can start working
+without asking basic questions.
+
+Cover:
+1. Project overview: what is this, what problem does it solve, what is the stack
+2. Directory structure: responsibility of each top-level directory
+3. How to run it: dev, test, build commands
+4. Key dependencies and versions
+5. Any conventions inferable from README, CONTRIBUTING, or config files
+
+Requirements:
+- Be concise. No filler.
+- Prefer runnable commands the agent can copy-paste.
+- Do not invent things; mark uncertain items as "needs human confirmation".
+- Output Markdown, save to CLAUDE.md (or AGENTS.md).
+```
+
+In practice the agent runs `Glob`/`LS` over the repo, `Read`s the key files (`README.md`, `package.json`/`Cargo.toml`/`go.mod`, `Makefile`, CI configs), and only then starts writing.
+
+**The generated CLAUDE.md looks like this** (excerpt, Node.js + TypeScript):
+
+````markdown
+# CLAUDE.md
+
+This file provides guidance to Claude Code when working with code in this repository.
+
+## Project Overview
+
+A Fastify-based REST API for managing user subscriptions. TypeScript, Node.js 20+,
+PostgreSQL via Prisma.
+
+## Development Commands
+
+- `npm install` — install dependencies
+- `npm run dev` — start dev server on port 3000
+- `npm run build` — production build to `./dist`
+- `npm test` — Vitest unit tests
+- `npm run lint` — ESLint
+- `npm run typecheck` — strict TypeScript check
+
+## Architecture
+
+- `src/server/` — Fastify routes and HTTP handlers
+- `src/db/` — Prisma client; migrations in `prisma/migrations/`
+- `src/services/` — business logic, organized by domain
+- `src/utils/` — shared helpers
+- `tests/` — mirrors `src/` structure
+
+## Key Dependencies
+
+- Fastify 4.x, Prisma 5.x, Vitest, Zod (runtime validation)
+
+## Conventions (inferred from code)
+
+- All async functions have explicit return types
+- Named exports preferred over default exports
+- Database access goes through `services/` only — handlers never touch Prisma directly
+
+## Notes
+
+- Env vars documented in `.env.example`
+- `scripts/seed.ts` populates a fresh DB with sample data
+````
+
+**What you can learn from this:**
+
+✅ **`/init` captures**: stack, commands, directories, dependencies, conventions visible in the code itself.
+❌ **`/init` does not (and cannot) capture**:
+- Why Prisma over Drizzle? (historical decision)
+- Which tables must never be `DROP`ped? (ops red line)
+- Which functions in `services/` are hot paths that need load testing before changes? (performance lore)
+- What did the last P0 incident involve? (scar tissue)
+
+These belong to **Step 2 (the "archaeologist" pass)** — they're the implicit knowledge that makes the file genuinely valuable over time.
+
+The bottom line: `/init` is the fastest possible starting point — seconds to a usable draft — and far better than a blank file. But it's a starting point, not a finished AGENTS.md:
+
+- It only sees file structure and explicit configs, so it **misses unwritten conventions** (e.g. "all commit messages must follow Conventional Commits").
+- It tends toward generic phrasing ("This is a Node.js project using npm" — not useful).
+- It doesn't know where the **traps** are.
+- It doesn't know what the **red lines** are.
+
+So: run `/init`, then **review what it wrote**, prune filler, and mark anything you're not sure about.
+
+**Step 2: Code archaeologist (filling in what `/init` can't)**
 
 ```text
 Act like a code archaeologist. Do not edit files.
 Answer:
-1. What are the main modules and dependencies?
-2. Which files look most complex?
-3. What does recent git history suggest is fragile?
+1. Draw a module dependency graph (mermaid).
+2. List the 5 most complex files and what they do.
+3. Skim recent git log (~50 commits). Where do bugs keep coming back? That signals hidden complexity.
 4. Where is test coverage weak?
-5. What implicit conventions can you infer?
+5. What in the code looks suspicious or that you don't understand?
+6. What conventions exist but aren't written down — the **implicit knowledge**:
+   - **Naming**: camelCase or snake_case for functions/variables/files? Interface prefixes (`I-`/`IFace`)? Test file naming (`*_test.go` vs `__tests__/*`)?
+   - **Error handling**: throw exceptions vs return `error` vs return `Result`? Should errors carry a trace_id? How are business errors distinguished from system errors?
+   - **Logging**: which logger? How are levels assigned? Which fields must **never** be logged in production (passwords, tokens, PII)?
+   - **Directory rules**: is `internal/` actually off-limits to external imports? Is `scripts/` for throwaways or long-lived assets? Which folders are "auto-generated, do not edit by hand"?
+   - **Commit/PR conventions**: message format? Squash policy? Who is allowed to merge to main?
 ```
 
-Next, run the app locally:
+> 💡 Item 6 is where the real value lives — `/init` can't see any of this. Implicit knowledge typically **lives only in old engineers' heads and chat history**; without writing it down, every new engineer (or new agent) has to learn it the hard way through code review pushback. Letting the agent surface it once and writing the result into AGENTS.md pays off for every future session and every new teammate.
+
+**Step 3: Get the project running locally (run before you edit)**
+
+> ⚠️ **Iron rule: don't modify before running it.** Until the project starts locally, every code change is **blind editing** — you don't know what the baseline looks like, and you can't verify whether your change actually works. Even if the agent confidently says "this should be fine," you have no way to falsify it. Step 3 must complete before any warmup edits.
 
 ```text
 Help me get this project running locally.
 When an error appears, report it exactly. Do not guess configuration.
 Record every manual step so we can update AGENTS.md.
+
+Until this step is done, do not modify any code — I want to confirm the baseline works first.
 ```
 
-Finally, do a low-risk warmup task:
+Getting it running is real progress. **A lot of implicit knowledge surfaces during setup**: a port that needs changing, an undocumented env var, a service that has to start first — none of which `/init` could ever see.
+
+> 💡 **Why "run before edit" is non-negotiable**:
+> - **You need a baseline before you can tell what you broke.** Running successfully = you have a known-good version. After that, any failed change can be `git stash`/`git reset`'d back to that known-good state. Without a baseline, when something breaks you can't tell whether it was your edit or the project itself.
+> - **Setup is the cheapest form of "reading the code."** Error messages force the agent (and you) into the configs, entrypoints, and dependency boundaries that actually matter. That's far more efficient than asking the agent to cold-read source.
+> - **Implicit knowledge surfaces during setup.** Missing `.env` keys, services with start-order dependencies, port conflicts — these only appear when you try to run things. They're exactly what AGENTS.md most needs to record.
+
+**Step 4: Merge findings into AGENTS.md.** Take the archaeology output plus the setup steps and fold them into the file from Step 1.
+
+**Step 5: A low-risk warmup task**:
 
 - fix a typo
 - add a log line
@@ -429,16 +611,50 @@ Rough context usage guide:
 
 ### 5.2 Built-In Session Commands
 
-Different tools use different names, but the patterns are similar:
+**Common commands (Claude Code and Codex both have these)**
 
 | Command | Purpose | Use When |
 |---|---|---|
 | `/compact` | summarize and keep going | you need more room in the same session |
 | `/clear` | clear current conversation | you want a clean topic in the same window |
 | `/init` | scan project and draft agent instructions | first step in an existing repo |
-| `/resume` | continue a previous session | unfinished work continues later |
+| `/resume` (or `--continue`) | continue a previous session | unfinished work continues later |
 
 `/compact` is useful, but it lets the AI decide which details survive. A handoff file is often safer because you choose what gets preserved.
+
+> 🎯 **`handoff.md` vs `/compact` — two kinds of compression, different jobs**:
+>
+> | Dimension | Write a `handoff.md` file | `/compact` in-session |
+> |---|---|---|
+> | **What it is** | **File on disk** — persistent, can be committed to git | **In-session rewrite** — context is summarized in place to free up tokens |
+> | **Session handling** | **Start a new session** (clean slate, full context) | **Same session continues** |
+> | **Who decides what survives** | **You** (you write/review the handoff) | **The AI** (auto-summary; you accept what it picks) |
+> | **Survives across days / people?** | ✅ Yes, the file is still there | ❌ No, gone when the session closes |
+> | **Typical use** | Phase done, end of day, handing off to a teammate | Same task still in progress, don't break flow, just need room |
+>
+> **Quick rule**:
+> - Switching sessions (or continuing tomorrow / handing off) → **`handoff.md`** (file persistence).
+> - Staying in the current session → **`/compact`** (in-session compression).
+>
+> They aren't replacements — they're different tools. Best practice: **`/compact` for tactical endurance, `handoff.md` for strategic handoff.** A long single-task push uses `/compact`; finishing a phase or crossing a day/person boundary uses `handoff.md`.
+
+**Codex-specific commands**
+
+Codex (CLI/App) ships a few additional slash commands worth calling out:
+
+| Command | Purpose | Use When |
+|---|---|---|
+| `/review` | Have **another** Codex agent review your current changes before you commit | Before commit/PR, when you want a second pair of eyes |
+| `/fork` | Branch off a new thread from any earlier turn; the original transcript is preserved | "What if I tried a different approach?" — exploratory experiments without losing the main thread |
+| `/clear` | Clear the visible transcript while staying in the same CLI session | You just want the screen clean, no need to swap sessions |
+| `/compact` | Replace earlier turns with a summary, freeing context but keeping key details | Long conversation — usually more useful than `/clear` because details survive |
+| `/plan` | Enter **plan mode**, optionally with an initial prompt | Refactors, migrations, anything you want to think through first, e.g. `/plan Propose a migration plan for this service` |
+
+A few notes from practice:
+
+- **`/review` is high-leverage**. Spending 30 seconds before commit on a separate agent's review consistently catches problems the original agent can't see — missed test updates, unnecessary new dependencies, naming inconsistent with the rest of the code.
+- **`/fork` fits "I want to try something risky without losing the main thread"**. Want to see what an aggressive refactor of a core function looks like, without polluting the main discussion? Fork, explore, throw it away if it doesn't work or merge the conclusion back if it does.
+- **`/plan` pairs with the "plan first, then code" habit**: for refactors, migrations, and cross-module work, `/plan` first to get candidate approaches (A/B/C), review, then execute. This is the standard usage now that plan modes have converged across tools (see Section 1.3).
 
 ### 5.3 Emergency Recovery
 
@@ -466,11 +682,94 @@ Continue from the previous session, but restate the plan before editing.
 Good habits:
 
 - one session per clear task or phase
-- commit after each meaningful milestone
+- commit after each meaningful milestone (just `git commit` — nothing special, plain git) plus a short "what we've done so far" note from the agent
 - store decisions in files, not only chat
 - reference file paths instead of pasting large content
-- send broad searches to subagents
+- send broad searches and large output (build logs, test logs) to subagents
 - close solved topics explicitly
+
+**Push expanding output to subagents.** Tasks that involve "scan the whole codebase," "read 50 files," or "process a long build log" should go to a subagent.
+
+> 📖 **What's a build log?** It's the output a project produces while building — what scrolls past when you run `npm run build`/`make`/`cargo build`/`mvn package`: dependency resolution, compile progress, warnings, error stacks, linker output. A build log on a medium-sized project is often **thousands of lines**, and pasting it into the main agent burns half a context window. Same goes for **test logs** (full `pytest`/`go test` output), **CI logs** (a failed GitHub Actions run), **docker build output**. Standard practice is to send these to a subagent — it reads thousands of lines, then comes back with one sentence: "Line 1273 has an unhandled promise rejection."
+
+> 💡 **How are subagents invoked? Two modes, and they don't conflict**:
+>
+> 1. **Main agent dispatches automatically**: while working, the main agent decides "this is going to blow up my context, I'll send a subagent" and creates one with **its own prompt**. You don't have to manage it. Claude Code's `Agent` tool and Codex's parallel tasks are like this.
+> 2. **You dispatch explicitly**: you tell the main agent "**send a subagent to scan the whole codebase for uses of the deprecated API and return only a list**" — now the subagent's prompt is **the one you wrote**, and the main agent just dispatches and receives.
+>
+> **They mix freely**: you can manually launch one for a key investigation, and after it returns, the main agent might auto-dispatch several more in parallel based on the result. You stay in control — you can intercept, edit, or block any auto-dispatched prompt.
+>
+> **Which to choose?** For routine "scan and summarize" work, let the main agent dispatch. For **decision-affecting investigation**, write the prompt yourself — you know best what you want found, what to ignore, and what format you want back.
+
+**Don't repeat what you've already said.** If you find yourself re-explaining a constraint, write it down instead.
+
+```text
+✗  Me: "this function should return Result<T, E>"
+   [10 turns later] agent goes back to using throw
+
+✓  Me: "Add 'all new functions return Result<T, E>' to the conventions section of AGENTS.md"
+```
+
+> 📖 **What's `throw`? Why is this two competing styles?**
+>
+> `throw` (raise an exception) and `Result<T, E>` (return a result object) are the **two dominant error-handling styles**:
+>
+> | Style | How you write it | How errors are handled | Languages |
+> |---|---|---|---|
+> | **Throw exceptions** | `throw new Error("not found")` | Caller wraps with `try/catch` | JavaScript, Java, Python |
+> | **Return a Result** | `return Err("not found")` | Caller checks `if result.is_ok()` before using it | Rust, Go (via `error`), Haskell |
+>
+> **Quick mental model**:
+> - `throw` is like throwing a grenade — toss it up the call stack and hope someone has a `catch` ready. **Quick to write, easy to forget to handle** (no catcher = the program dies).
+> - `Result<T, E>` is like a delivery package — wrap up success or failure and hand it back; **the caller has to "sign for it" (explicitly check ok/err) before they can use the contents**. Forces handling at every step. **Safer, more verbose.**
+>
+> **What this example illustrates**: the team picked `Result<T, E>` (safer), but you only mentioned it once in chat. Ten turns later that turn got compacted out, and the agent — drawing on its training, where most code uses `throw` — slid back to `throw`. This is exactly why **"don't say it only in chat, write it into AGENTS.md"** matters: written conventions survive context drift.
+
+**Don't paste large files. Reference paths.**
+
+```text
+✗  Me: [pastes 5000-line schema.sql] this is the schema, please...
+✓  Me: schema is in db/schema.sql; grep for the parts you need.
+```
+
+Let the agent pull what it actually needs rather than force-feeding the whole file.
+
+**Surviving long sessions**
+
+> 🤔 **How do you tell it's a "long session"?** Watch for these signals — three or more means yes:
+> 1. **Wall time**: the same session has been running **over 1.5–2 hours** (regardless of token usage, both you and the AI start to fatigue).
+> 2. **Turn count**: you've gone back and forth **30–50+ times** (threshold varies by model; 4o/Sonnet hold up longer).
+> 3. **Context usage**: the tool shows **>50% of the context window used** (visible in Claude Code's header or Codex's status bar, e.g. `127k / 200k`).
+> 4. **Task scope drift**: you've drifted across **multiple subtasks** ("write login" → "while we're at it, tweak the schema" → "fix this unrelated bug").
+> 5. **Subjective**: you have to scroll through screens to find earlier context, the agent re-asks things you've already answered. That's the "wrap it up" signal.
+>
+> If only 1–2 hold, the techniques below can keep going. **At 3+, the right move isn't to extend — it's to write `handoff.md` and start a fresh session** (see the comparison earlier in 5.2).
+
+If you really must keep the session running:
+
+- **Commit + summarize regularly**: every milestone, `git commit` plus a short agent-written progress note. If context collapses, your git history still has the work.
+- **Disable tools you aren't using**: tool **schemas** themselves cost tokens. If you don't need them, turn them off.
+- **Brief-reply mode**: tell the agent to "keep replies under 3 paragraphs unless I ask for detail."
+- **Explicitly close resolved topics**: "Issue X is solved; no need to revisit it."
+
+> 📖 **What's a "schema"?** It's the **usage spec for a tool**.
+>
+> Every tool (`Read`, `Edit`, `Bash`, `WebSearch`, etc.) has a description that tells the agent:
+> - what the tool is and what it does (`Read` = read a file)
+> - what parameters it takes and their types (`file_path: string`, `limit?: number`)
+> - what it returns and any caveats
+>
+> That description is the schema. **The catch: it's sent to the agent at the start of every turn** — that's how the agent knows what tools exist and how to call them.
+>
+> **Why it costs tokens**:
+> - A single tool's schema is typically **200–800 tokens**.
+> - Claude Code and Codex enable dozens of tools by default (potentially with several MCP connectors attached) — total can be **5k–15k tokens**.
+> - It's **resent every turn**, so cost compounds in long sessions.
+>
+> **How to disable unused tools**:
+> - Claude Code: `/mcp` to disable an MCP server; `disabledMcpjsonServers` in `.claude/settings.json` for fine-grained control.
+> - Codex: similar MCP/plugin management UI.
+> - **Typical case**: this session doesn't need a browser? Disable the Chrome/Playwright MCP. Doesn't need doc lookup? Disable the web fetch tools. Each one saves 1–3k tokens, which adds up over a long session.
 
 Context is not long-term memory. Files are.
 
