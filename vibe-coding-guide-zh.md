@@ -209,6 +209,105 @@ Vibe Coding 里,字符是 Agent 打的。但 Agent 的"注意力"——也就是
 
 > **经验**:AGENTS.md 控制在 200-400 行最佳。太短没信息,太长 Agent 抓不到重点。每隔几周回顾一次,把"上次 Agent 又踩这个坑"的内容补进去。
 
+### 具体例子
+
+下面是三份可以直接改造的小例子。重点不是照抄措辞,而是每条规则都要对应一个明确的失败模式。
+
+**小型库**
+
+```markdown
+# AGENTS.md
+
+## 项目简介
+
+这是一个解析发票编号的 TypeScript 小型库。
+它会发布到 npm,并被下游计费系统调用。
+
+## 常用命令
+
+- 测试: `npm test`
+- 类型检查: `npm run typecheck`
+- 构建: `npm run build`
+
+## 规则
+
+- 不要修改已导出的函数名或参数形状,除非同步更新 `CHANGELOG.md`。
+- 运行时依赖保持为 0,新增依赖必须先得到维护者确认。
+- 每新增一条解析规则,都要补测试,并至少包含一个非法输入 case。
+- 保持 Node.js 18 兼容。
+```
+
+这些规则在防止:
+
+- 无意中破坏公开 API
+- 小型库被不必要的依赖拖重
+- 解析逻辑只覆盖 happy path
+- 本地能跑、但受支持用户环境里跑不了
+
+**Web 应用**
+
+```markdown
+# AGENTS.md
+
+## 项目简介
+
+这是一个 Next.js Web 应用,数据库是 PostgreSQL。
+用户可见路由在 `app/`,共享 UI 在 `components/`。
+
+## 常用命令
+
+- 本地开发: `npm run dev`
+- 测试: `npm test`
+- Lint + 类型检查: `npm run check`
+
+## 规则
+
+- 不要在 route component 里直接写数据库查询,统一走 `lib/services/`。
+- 不要修改已有 migration 文件,需要变更就新增 migration。
+- 表单校验写在共享 schema 里,不要在组件里重复写一份。
+- 改 auth 前先读 `docs/auth-flow.md`,PR 里说明影响了哪条流程。
+```
+
+这些规则在防止:
+
+- UI 代码绕过 service 层约束
+- 已部署环境的 migration 历史被破坏
+- 前后端校验逻辑慢慢漂移
+- 看似局部的改动引入 auth 回归
+
+**文档优先仓库**
+
+```markdown
+# AGENTS.md
+
+## 项目简介
+
+这个仓库主要是一份文字指南,包含 Markdown、PDF 和一个小型静态网站。
+把文字修改当作产品修改:优先保证清晰、结构稳定、读者信任。
+
+## 常用命令
+
+- 检查链接:如果仓库有文档化的链接检查命令,就使用它。
+- 构建网站:如果仓库有文档化的静态站构建命令,就使用它。
+- 如果没有自动化命令,手动打开被修改页面,检查导航、链接和下载入口。
+
+## 规则
+
+- 修改中英文共有章节时,保持两个版本的结构对齐。
+- 不要擅自重写作者语气,除非任务明确要求改 tone。
+- 优先做小而可 review 的措辞修改,不要大段重写。
+- 新增例子时,说明这个例子在防止哪类失败。
+- 如果仓库同时发布 PDF 或静态页面,同步更新生成物,或者明确说明为什么没有更新。
+```
+
+这些规则在防止:
+
+- 翻译版本和源文档结构漂移
+- 文字风格被抹平,指南失去辨识度
+- 文档 diff 过大导致 review 困难
+- 例子看起来有用,但没有教清楚具体教训
+- Markdown 已更新,但 PDF 或网站输出悄悄过期
+
 ### 用什么语言写?中文还是英文?
 
 **先说结论:Agent 不挑语言,中文 / 英文 / 中英混排都能正确读懂。** 选哪种,不是技术问题,是**团队体验**问题。
@@ -1556,8 +1655,8 @@ Codex App(OpenAI 的桌面客户端)把这个流程做成了 UI:
    ```bash
    #!/bin/bash
    # 在新 worktree 里跑这个就能跑起来
-   cp ../../my-repo/.env .                   # 拷贝主仓库的 env
-   ln -s ../../my-repo/node_modules .         # 共享 node_modules(同 OS)
+   cp /path/to/main-repo/.env .               # 拷贝主仓库的 env
+   ln -s /path/to/main-repo/node_modules .     # 共享 node_modules(同 OS)
    # 或者 npm ci 重装
    ```
 
@@ -1615,6 +1714,80 @@ Codex App(OpenAI 的桌面客户端)把这个流程做成了 UI:
 - **超过 5 个 worktree**:你 review 不过来,变成"AI 写得多但没人看"
 
 > **心法**:worktree 不是让你"管更多 Agent",而是让你"在能管的范围内,让 Agent 不互相干扰"。瓶颈永远是你的 review 带宽。
+
+### 命令级小例子
+
+假设你手里有三个互相独立的 issue:
+
+- `auth-copy`:优化登录错误文案
+- `pricing-tests`:补价格规则测试
+- `docs-api`:更新 API 使用文档
+
+从主 worktree 出发,每个任务一条分支、一个目录:
+
+```bash
+mkdir -p ../wt
+
+git worktree add -b agent/auth-copy ../wt/auth-copy main
+git worktree add -b agent/pricing-tests ../wt/pricing-tests main
+git worktree add -b agent/docs-api ../wt/docs-api main
+
+git worktree list
+```
+
+然后在每个目录里启动一个 Agent:
+
+```bash
+# 终端 A
+cd ../wt/auth-copy
+# Agent A: "Read AGENTS.md and specs/auth-copy.md. Only edit login copy and related tests."
+
+# 终端 B
+cd ../wt/pricing-tests
+# Agent B: "Read AGENTS.md and specs/pricing-tests.md. Add tests only; do not change pricing logic."
+
+# 终端 C
+cd ../wt/docs-api
+# Agent C: "Read AGENTS.md and specs/docs-api.md. Update docs only; do not edit runtime code."
+```
+
+这个模式和具体工具无关。Codex、Claude Code、Cursor、Aider,或者终端里的其他 Agent,都可以按同一套方式工作:一个任务、一个分支、一个 worktree、一段聚焦 prompt。
+
+启动之前先做一次文件重叠检查:
+
+```text
+auth-copy      -> app/login/**, tests/login/**
+pricing-tests  -> tests/pricing/**
+docs-api       -> docs/api/**
+```
+
+如果两个任务都会改 `app/login/form.tsx`,就不要并行。要么串行做,要么让一个任务等另一个分支合并后再开始。
+
+review 和清理也按任务逐个来:
+
+```bash
+cd ../wt/pricing-tests
+git status
+git diff
+npm test
+git add .
+git commit -m "test: cover pricing rules"
+
+# 回到主 worktree。这里换成你的真实主仓库路径。
+cd /path/to/main-repo
+git merge agent/pricing-tests
+git worktree remove ../wt/pricing-tests
+git branch -d agent/pricing-tests
+```
+
+如果你的项目不用 `npm test`,就替换成仓库文档里写明的测试或验证命令。
+
+常见错误:
+
+- 把会改同一批文件的任务分给多个 Agent
+- 让每个 Agent 都顺手"清理"无关代码
+- 忘记每个 worktree 都需要自己的 setup、env 文件和端口
+- 没逐个 review diff,就把所有分支一起合并
 
 ---
 

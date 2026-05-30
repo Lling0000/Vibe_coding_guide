@@ -182,4 +182,9 @@ Good contributions make the guide more concrete, verifiable, and useful in real 
 
 ## License
 
-No license has been specified for this repository yet. Until a license is added by the repository owner, do not assume redistribution or reuse rights beyond normal GitHub viewing and contribution workflows.
+This repository uses a dual-license model:
+
+- Documentation, guides, PDFs, and written instructional content are licensed under [CC BY 4.0](./LICENSE-CONTENT).
+- Website code, scripts, styles, and other software source files are licensed under the [MIT License](./LICENSE).
+
+If a file does not say otherwise, use the license that matches its primary purpose: written guide content uses CC BY 4.0; executable or reusable code uses MIT.

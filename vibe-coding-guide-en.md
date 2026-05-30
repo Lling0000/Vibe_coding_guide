@@ -332,7 +332,106 @@ Avoid:
 
 Keep `AGENTS.md` short enough to be useful. Around 200-400 lines is often enough for a real project.
 
-### 3.8 Which Language Should You Write It In?
+### 3.8 Concrete Examples
+
+Here are three small, tool-neutral examples you can adapt. The important part is not the exact wording; it is that every rule prevents a specific failure mode.
+
+**Small library**
+
+```markdown
+# AGENTS.md
+
+## Project Overview
+
+This is a small TypeScript library for parsing invoice numbers.
+It is published to npm and used by downstream billing systems.
+
+## Commands
+
+- Test: `npm test`
+- Typecheck: `npm run typecheck`
+- Build: `npm run build`
+
+## Rules
+
+- Do not change exported function names or argument shapes without updating `CHANGELOG.md`.
+- Keep runtime dependencies at zero unless the maintainer approves a new dependency.
+- Add tests for every new parser rule, including one invalid input case.
+- Preserve support for Node.js 18.
+```
+
+What these rules prevent:
+
+- accidental breaking changes in public APIs
+- unnecessary dependency bloat in a small package
+- parser fixes that only cover the happy path
+- code that passes locally but breaks for supported users
+
+**Web app**
+
+```markdown
+# AGENTS.md
+
+## Project Overview
+
+This is a Next.js web app with a PostgreSQL database.
+User-facing routes live in `app/`; shared UI lives in `components/`.
+
+## Commands
+
+- Dev server: `npm run dev`
+- Test: `npm test`
+- Lint and typecheck: `npm run check`
+
+## Rules
+
+- Do not put database queries directly in route components; use `lib/services/`.
+- Do not edit existing migration files. Add a new migration instead.
+- Keep form validation in the shared schema file, not duplicated in components.
+- Before changing auth, read `docs/auth-flow.md` and mention the affected flow in the PR.
+```
+
+What these rules prevent:
+
+- UI code bypassing service-layer rules
+- migration history becoming unsafe for deployed environments
+- frontend and backend validation drifting apart
+- accidental auth regressions from local-looking changes
+
+**Documentation-first repo**
+
+```markdown
+# AGENTS.md
+
+## Project Overview
+
+This repository is primarily a written guide with Markdown, PDFs, and a small static site.
+Treat prose changes like product changes: preserve clarity, structure, and reader trust.
+
+## Commands
+
+- Check links: use the repository's documented link checker, if one exists.
+- Build site: use the repository's documented static-site build command, if one exists.
+- If no automated command exists, manually open the edited pages and verify navigation, links, and downloads.
+
+## Rules
+
+- Keep English and translated docs structurally aligned when editing shared sections.
+- Do not rewrite the author's voice unless the task asks for tone editing.
+- Prefer small, reviewable wording changes over broad rewrites.
+- When adding examples, explain the failure mode each example prevents.
+- If the repository ships generated PDFs or static pages, update those artifacts or explicitly note why they were left unchanged.
+```
+
+What these rules prevent:
+
+- translations drifting away from the source guide
+- style-flattening that makes the guide less recognizable
+- huge documentation diffs that are hard to review
+- examples that sound useful but do not teach a concrete lesson
+- Markdown changes that silently leave PDFs or website output stale
+
+### 3.9 Which Language Should You Write It In?
 
 **Short answer: agents don't care.** They read English, Chinese, mixed, and other languages equally well. The choice is a team UX question, not a technical one.
 
@@ -1230,7 +1329,7 @@ Create a setup script:
 #!/usr/bin/env bash
 set -euo pipefail
 
-cp ../../main-repo/.env .
+cp /path/to/main-repo/.env .
 npm ci
 ```
 
@@ -1273,6 +1372,80 @@ Do not use worktrees when:
 ```
 
 The bottleneck is still human review bandwidth. More agents are not useful if nobody can review the output.
+
+### 9.6 Command-Level Walkthrough
+
+Example: you have three independent issues in one repo:
+
+- `auth-copy`: improve login error copy
+- `pricing-tests`: add missing tests for pricing rules
+- `docs-api`: update API usage docs
+
+Create one branch and one directory per task from your main worktree:
+
+```bash
+mkdir -p ../wt
+
+git worktree add -b agent/auth-copy ../wt/auth-copy main
+git worktree add -b agent/pricing-tests ../wt/pricing-tests main
+git worktree add -b agent/docs-api ../wt/docs-api main
+
+git worktree list
+```
+
+Then start one agent in each directory:
+
+```bash
+# Terminal A
+cd ../wt/auth-copy
+# Agent A: "Read AGENTS.md and specs/auth-copy.md. Only edit login copy and related tests."
+
+# Terminal B
+cd ../wt/pricing-tests
+# Agent B: "Read AGENTS.md and specs/pricing-tests.md. Add tests only; do not change pricing logic."
+
+# Terminal C
+cd ../wt/docs-api
+# Agent C: "Read AGENTS.md and specs/docs-api.md. Update docs only; do not edit runtime code."
+```
+
+The split matters more than the tool. Codex, Claude Code, Cursor, Aider, or a terminal-based agent can all follow the same pattern: one task, one branch, one worktree, one focused prompt.
+
+Before launching the agents, do a quick overlap check:
+
+```text
+auth-copy      -> app/login/**, tests/login/**
+pricing-tests  -> tests/pricing/**
+docs-api       -> docs/api/**
+```
+
+If two tasks both need `app/login/form.tsx`, do not run them in parallel. Sequence them, or make one task wait for the other branch to merge.
+
+Review and clean up one task at a time:
+
+```bash
+cd ../wt/pricing-tests
+git status
+git diff
+npm test
+git add .
+git commit -m "test: cover pricing rules"
+
+# Return to your main worktree. Replace this path with your actual repo path.
+cd /path/to/main-repo
+git merge agent/pricing-tests
+git worktree remove ../wt/pricing-tests
+git branch -d agent/pricing-tests
+```
+
+If your project does not use `npm test`, replace that command with the test or verification command documented in the repo.
+
+Common mistakes:
+
+- assigning multiple agents tasks that edit the same files
+- letting every agent "clean up" unrelated code
+- forgetting that each worktree needs its own setup, env files, and ports
+- merging all branches before reviewing each diff
 
 ---
 
