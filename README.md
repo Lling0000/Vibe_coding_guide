@@ -127,4 +127,8 @@ This is a documentation-first repository. The current content is complete enough
 
 ## License
 
-No license has been specified yet. Add one before redistributing or reusing this material in a public project.
+This project is licensed under the Creative Commons Attribution 4.0 International License (CC BY 4.0).
+
+You are free to share and adapt the guide, including translations and derivative works, as long as appropriate credit is given.
+
+See [LICENSE](./LICENSE) for details.
