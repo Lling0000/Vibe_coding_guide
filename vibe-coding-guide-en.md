@@ -1573,7 +1573,40 @@ If CI fails, inspect the failing step and reproduce locally before changing code
 Do not guess fixes from partial logs.
 ```
 
-### 12.3 AI in CI
+### 12.3 Review Checklist Before Merge
+
+Passing CI is necessary, not sufficient. CI can prove the code builds and the known tests pass; it cannot prove the feature is the right feature, the UX is acceptable, or the design fits the project.
+
+Before merging agent-written code, check:
+
+- **Scope**: did the diff stay inside the requested task?
+- **Behavior**: do the tests cover success, failure, and boundary cases?
+- **Architecture**: did the agent follow existing layers instead of inventing a new path?
+- **Dependencies**: did it add a package, service, or tool without a clear reason?
+- **Security**: did it touch auth, permissions, secrets, PII, or input validation?
+- **Data safety**: did it edit migrations, deletion logic, money logic, or background jobs?
+- **Observability**: are important failures logged or surfaced in the existing style?
+- **Docs**: did public behavior, commands, or config change without documentation?
+
+A useful rule for PRs: if the agent changed code, the PR description should say what was verified, which checks were not run, and where a human should look most carefully.
+
+### 12.4 Tests That Catch Agent Mistakes
+
+Agent mistakes often look plausible. Aim tests at the places where plausible code breaks:
+
+| Agent mistake | Test that catches it |
+|---|---|
+| handles the happy path only | add empty, missing, duplicate, and invalid input cases |
+| changes an API response shape | snapshot or contract test for the response payload |
+| forgets authorization | test same request as owner, other user, and anonymous user |
+| mishandles timezones | test UTC plus at least one non-UTC timezone |
+| uses float for money | test decimal rounding and large values |
+| creates duplicate side effects | retry the same job/request twice and assert idempotency |
+| hides an error | assert the error code/message and log or metric path |
+
+These tests are not busywork. They encode the parts of the project an agent is most likely to smooth over.
+
+### 12.5 AI in CI
 
 AI can also run inside CI for:
 
@@ -1590,7 +1623,7 @@ Non-interactive CI agents need stricter rules:
 - write structured PR comments
 - do not hide failures
 
-### 12.4 CD Guardrails
+### 12.6 CD Guardrails
 
 Never let AI directly deploy to production.
 
@@ -1607,7 +1640,7 @@ production deploy
 
 The human approval is not just code review. It is a final operational brake.
 
-### 12.5 CI/CD Anti-Patterns
+### 12.7 CI/CD Anti-Patterns
 
 | Anti-Pattern | Result | Fix |
 |---|---|---|
