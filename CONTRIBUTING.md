@@ -53,6 +53,6 @@ For Markdown/front-door changes, also check that referenced local files exist.
 - Prefer "AI coding", "agent workflow", "spec", "context", "subagent", "worktree", "skill", "CI", and "testing" consistently.
 - Keep code identifiers such as `AGENTS.md`, `CLAUDE.md`, `.gitignore`, and `worktree` unchanged.
 
-## License Note
+## License
 
-No license has been specified for this repository yet. Until the repository owner adds a license, contributors should not assume broad redistribution or reuse rights beyond normal GitHub viewing and contribution workflows.
+By contributing, you agree that your contribution is provided under the MIT License used by this repository.

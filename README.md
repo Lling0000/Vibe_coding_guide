@@ -19,7 +19,7 @@ Language: English | [中文](./README.zh-CN.md)
 ![Scope](https://img.shields.io/badge/scope-AI%20coding%20workflow-0f766e)
 ![Languages](https://img.shields.io/badge/languages-English%20%7C%20Chinese-2563eb)
 ![Chapters](https://img.shields.io/badge/chapters-16-b84d37)
-![License](https://img.shields.io/badge/license-not%20specified-lightgrey)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 </div>
 
