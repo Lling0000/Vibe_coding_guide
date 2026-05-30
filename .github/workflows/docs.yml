@@ -1,0 +1,63 @@
+name: Docs
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - gh-pages
+
+jobs:
+  links:
+    name: Check local documentation links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check local links
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+          from urllib.parse import unquote, urlparse
+
+          root = Path(".").resolve()
+          docs = [
+              *root.glob("*.md"),
+              *root.glob("docs/**/*.md"),
+          ]
+          pattern = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+          ignored_prefixes = ("http://", "https://", "mailto:", "#")
+          missing = []
+
+          for doc in docs:
+              text = doc.read_text(encoding="utf-8")
+              for raw in pattern.findall(text):
+                  target = raw.strip()
+                  if not target or target.startswith(ignored_prefixes):
+                      continue
+                  if "://" in target:
+                      continue
+                  parsed = urlparse(target)
+                  path = unquote(parsed.path)
+                  if not path or path.startswith("#"):
+                      continue
+                  candidate = (doc.parent / path).resolve()
+                  try:
+                      candidate.relative_to(root)
+                  except ValueError:
+                      missing.append((doc, target, "outside repository"))
+                      continue
+                  if not candidate.exists():
+                      missing.append((doc, target, "missing"))
+
+          if missing:
+              for doc, target, reason in missing:
+                  print(f"{doc.relative_to(root)} -> {target}: {reason}")
+              sys.exit(1)
+          print(f"Checked {len(docs)} Markdown files.")
+          PY

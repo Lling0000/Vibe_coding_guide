@@ -5,9 +5,9 @@ const docs = {
     label: "中文",
     path: "./vibe-coding-guide-zh.md",
     pdf: "./vibe-coding-guide-zh.pdf",
-    title: "把 AI Coding 变成可复用的工程工作流。",
+    title: "AI Coding -> 可复用的工程工作流。",
     summary:
-      "从 spec、上下文、subagent、worktree、skill，到 CI、测试和审查习惯，帮你把 Agent 产出的代码管得住、交得出。",
+      "这不是 prompt 话术合集，而是一套从 spec、上下文、subagent、worktree、skill 到 CI、测试和审查的工程操作手册。",
     status: "中文教程",
     sections: "章",
     metrics: {
@@ -20,9 +20,9 @@ const docs = {
     label: "EN",
     path: "./vibe-coding-guide-en.md",
     pdf: "./vibe-coding-guide-en.pdf",
-    title: "Turn AI coding into a repeatable workflow.",
+    title: "AI coding -> repeatable engineering workflow.",
     summary:
-      "Specs, context, subagents, worktrees, skills, CI, testing, and review habits for builders who want AI agents to produce work they can trust.",
+      "Not a prompt collection: a field guide to specs, context, subagents, worktrees, skills, CI, tests, and review habits around AI-written code.",
     status: "English guide",
     sections: "chapters",
     metrics: {
@@ -170,16 +170,16 @@ const chapters = {
 
 const copy = {
   zh: {
-    brandLine: "费曼式 AI Coding 学习路线",
+    brandLine: "AI Coding 工程工作流手册",
     plannerMode: "学习清单",
     readerMode: "全文阅读",
     navKicker: "Feynman Loop",
-    navTitle: "16 天学习清单",
-    navCopy: "每天复习旧章节，再新增一章。",
+    navTitle: "16 天工程清单",
+    navCopy: "每天复习旧章节，再把一章落到真实工作流。",
     sideProgress: "总进度",
     resetAll: "重置全部进度",
     resetAllConfirm: "确定要清空 16 天的所有学习进度吗?",
-    plannerKicker: "Feynman Sprint",
+    plannerKicker: "Engineering Sprint",
     dayTitle: (day) => `Day ${day}: 累计学到第 ${day} 部分`,
     daySummary: (day) => {
       if (day === 1) {
@@ -191,7 +191,7 @@ const copy = {
     prevDay: "前一天",
     nextDay: "下一天",
     openReader: "打开原文",
-    heroCaption: "阅读、复述、查漏、应用",
+    heroCaption: "Spec、上下文、审查、验证",
     scopeStat: "今日范围",
     todayStat: "今日完成",
     overallStat: "总进度",
@@ -213,7 +213,7 @@ const copy = {
     dayProgress: (done, total) => `${done}/${total}`,
     search: "搜索章节",
     top: "顶部",
-    readerKicker: "Field Guide",
+    readerKicker: "Engineering Field Guide",
     loading: "Loading guide...",
     loadError: "Could not load guide",
     pdf: "下载 PDF",
@@ -231,16 +231,16 @@ const copy = {
     finishQuestion: "记录一个还没讲顺的问题,明天复习时先处理它。",
   },
   en: {
-    brandLine: "A Feynman path for AI coding",
+    brandLine: "AI coding engineering workflow",
     plannerMode: "Checklist",
     readerMode: "Reader",
     navKicker: "Feynman Loop",
-    navTitle: "16-Day Checklist",
-    navCopy: "Review previous parts, then add one new part each day.",
+    navTitle: "16-Day Engineering Checklist",
+    navCopy: "Review previous parts, then apply one new chapter to real work.",
     sideProgress: "Overall",
     resetAll: "Reset all progress",
     resetAllConfirm: "Clear all progress for the 16-day plan?",
-    plannerKicker: "Feynman Sprint",
+    plannerKicker: "Engineering Sprint",
     dayTitle: (day) => `Day ${day}: cumulative study through Part ${day}`,
     daySummary: (day) => {
       if (day === 1) {
@@ -252,7 +252,7 @@ const copy = {
     prevDay: "Previous",
     nextDay: "Next",
     openReader: "Open guide",
-    heroCaption: "Read, explain, repair, apply",
+    heroCaption: "Spec, context, review, verify",
     scopeStat: "Scope",
     todayStat: "Today",
     overallStat: "Overall",
@@ -274,7 +274,7 @@ const copy = {
     dayProgress: (done, total) => `${done}/${total}`,
     search: "Search chapters",
     top: "Top",
-    readerKicker: "Field Guide",
+    readerKicker: "Engineering Field Guide",
     loading: "Loading guide...",
     loadError: "Could not load guide",
     pdf: "Download PDF",
