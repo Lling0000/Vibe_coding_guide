@@ -332,7 +332,103 @@ Avoid:
 
 Keep `AGENTS.md` short enough to be useful. Around 200-400 lines is often enough for a real project.
 
-### 3.8 Which Language Should You Write It In?
+### 3.8 Concrete Examples
+
+Here are three small, tool-neutral examples you can adapt. The important part is not the exact wording; it is that every rule prevents a specific failure mode.
+
+**Small library**
+
+```markdown
+# AGENTS.md
+
+## Project Overview
+
+This is a small TypeScript library for parsing invoice numbers.
+It is published to npm and used by downstream billing systems.
+
+## Commands
+
+- Test: `npm test`
+- Typecheck: `npm run typecheck`
+- Build: `npm run build`
+
+## Rules
+
+- Do not change exported function names or argument shapes without updating `CHANGELOG.md`.
+- Keep runtime dependencies at zero unless the maintainer approves a new dependency.
+- Add tests for every new parser rule, including one invalid input case.
+- Preserve support for Node.js 18.
+```
+
+What these rules prevent:
+
+- accidental breaking changes in public APIs
+- unnecessary dependency bloat in a small package
+- parser fixes that only cover the happy path
+- code that passes locally but breaks for supported users
+
+**Web app**
+
+```markdown
+# AGENTS.md
+
+## Project Overview
+
+This is a Next.js web app with a PostgreSQL database.
+User-facing routes live in `app/`; shared UI lives in `components/`.
+
+## Commands
+
+- Dev server: `npm run dev`
+- Test: `npm test`
+- Lint and typecheck: `npm run check`
+
+## Rules
+
+- Do not put database queries directly in route components; use `lib/services/`.
+- Do not edit existing migration files. Add a new migration instead.
+- Keep form validation in the shared schema file, not duplicated in components.
+- Before changing auth, read `docs/auth-flow.md` and mention the affected flow in the PR.
+```
+
+What these rules prevent:
+
+- UI code bypassing service-layer rules
+- migration history becoming unsafe for deployed environments
+- frontend and backend validation drifting apart
+- accidental auth regressions from local-looking changes
+
+**Documentation-first repo**
+
+```markdown
+# AGENTS.md
+
+## Project Overview
+
+This repository is primarily a written guide with Markdown, PDFs, and a small static site.
+Treat prose changes like product changes: preserve clarity, structure, and reader trust.
+
+## Commands
+
+- Check links: `npm run check:links`
+- Build site: `npm run build`
+
+## Rules
+
+- Keep English and translated docs structurally aligned when editing shared sections.
+- Do not rewrite the author's voice unless the task asks for tone editing.
+- Prefer small, reviewable wording changes over broad rewrites.
+- When adding examples, explain the failure mode each example prevents.
+```
+
+What these rules prevent:
+
+- translations drifting away from the source guide
+- style-flattening that makes the guide less recognizable
+- huge documentation diffs that are hard to review
+- examples that sound useful but do not teach a concrete lesson
+
+### 3.9 Which Language Should You Write It In?
 
 **Short answer: agents don't care.** They read English, Chinese, mixed, and other languages equally well. The choice is a team UX question, not a technical one.
 
