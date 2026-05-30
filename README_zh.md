@@ -10,4 +10,4 @@
 - [中文完整教程](./vibe-coding-guide-zh.md)
 - [网站学习清单](https://lling0000.github.io/Vibe_coding_guide/)
 - [English README](./README.md)
-- [许可证说明](./README.md#license)
+- [许可证说明](./README.zh-CN.md#许可)
