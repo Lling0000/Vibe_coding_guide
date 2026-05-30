@@ -1607,6 +1607,74 @@ Codex App(OpenAI 的桌面客户端)把这个流程做成了 UI:
    - 删 worktree、删分支
 ```
 
+### 命令级小例子
+
+假设你手里有三个互相独立的 issue:
+
+- `auth-copy`: 优化登录错误文案
+- `pricing-tests`: 补价格规则测试
+- `docs-api`: 更新 API 使用文档
+
+每个任务一条分支、一个目录:
+
+```bash
+mkdir -p ../wt
+
+git worktree add -b agent/auth-copy ../wt/auth-copy main
+git worktree add -b agent/pricing-tests ../wt/pricing-tests main
+git worktree add -b agent/docs-api ../wt/docs-api main
+
+git worktree list
+```
+
+然后在每个目录里启动一个 Agent:
+
+```bash
+cd ../wt/auth-copy
+# Agent A: "Read AGENTS.md and specs/auth-copy.md. Only edit login copy and related tests."
+
+cd ../wt/pricing-tests
+# Agent B: "Read AGENTS.md and specs/pricing-tests.md. Add tests only; do not change pricing logic."
+
+cd ../wt/docs-api
+# Agent C: "Read AGENTS.md and specs/docs-api.md. Update docs only; do not edit runtime code."
+```
+
+这个模式和具体工具无关。Codex、Claude Code、Cursor、Aider,或者终端里的其他 Agent,都可以按同一套方式工作:一个任务、一个分支、一个 worktree、一段聚焦 prompt。
+
+启动之前先做一次文件重叠检查:
+
+```text
+auth-copy       -> app/login/**, tests/login/**
+pricing-tests   -> tests/pricing/**
+docs-api        -> docs/api/**
+```
+
+如果两个任务都会改 `app/login/form.tsx`,就不要并行。要么串行做,要么让一个任务等另一个分支合并后再开始。
+
+review 和清理也按任务逐个来:
+
+```bash
+cd ../wt/pricing-tests
+git status
+git diff
+npm test
+git add .
+git commit -m "test: cover pricing rules"
+
+cd ../../my-repo
+git merge agent/pricing-tests
+git worktree remove ../wt/pricing-tests
+git branch -d agent/pricing-tests
+```
+
+常见错误:
+
+- 把会改同一批文件的任务分给多个 Agent
+- 让每个 Agent 都顺手"清理"无关代码
+- 忘记每个 worktree 都需要自己的 setup、env 文件和端口
+- 没逐个 review diff,就把所有分支一起合并
+
 ### 反模式
 
 - **不写 spec 就并行派发**:5 个 Agent 跑歪了 5 个方向,review 时崩溃

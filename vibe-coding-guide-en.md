@@ -1272,6 +1272,74 @@ Do not use worktrees when:
 9. Remove worktrees.
 ```
 
+### 9.6 Command-Level Walkthrough
+
+Example: you have three independent issues in one repo:
+
+- `auth-copy`: improve login error copy
+- `pricing-tests`: add missing tests for pricing rules
+- `docs-api`: update API usage docs
+
+Create one branch and one directory per task:
+
+```bash
+mkdir -p ../wt
+
+git worktree add -b agent/auth-copy ../wt/auth-copy main
+git worktree add -b agent/pricing-tests ../wt/pricing-tests main
+git worktree add -b agent/docs-api ../wt/docs-api main
+
+git worktree list
+```
+
+Then start one agent in each directory:
+
+```bash
+cd ../wt/auth-copy
+# Agent A: "Read AGENTS.md and specs/auth-copy.md. Only edit login copy and related tests."
+
+cd ../wt/pricing-tests
+# Agent B: "Read AGENTS.md and specs/pricing-tests.md. Add tests only; do not change pricing logic."
+
+cd ../wt/docs-api
+# Agent C: "Read AGENTS.md and specs/docs-api.md. Update docs only; do not edit runtime code."
+```
+
+The split matters more than the tool. Codex, Claude Code, Cursor, Aider, or a terminal-based agent can all follow the same pattern: one task, one branch, one worktree, one focused prompt.
+
+Before launching the agents, do a quick overlap check:
+
+```text
+auth-copy       -> app/login/**, tests/login/**
+pricing-tests   -> tests/pricing/**
+docs-api        -> docs/api/**
+```
+
+If two tasks both need `app/login/form.tsx`, do not run them in parallel. Sequence them, or make one task wait for the other branch to merge.
+
+Review and clean up one task at a time:
+
+```bash
+cd ../wt/pricing-tests
+git status
+git diff
+npm test
+git add .
+git commit -m "test: cover pricing rules"
+
+cd ../../my-repo
+git merge agent/pricing-tests
+git worktree remove ../wt/pricing-tests
+git branch -d agent/pricing-tests
+```
+
+Common mistakes:
+
+- assigning multiple agents tasks that edit the same files
+- letting every agent "clean up" unrelated code
+- forgetting that each worktree needs its own setup, env files, and ports
+- merging all branches before reviewing each diff
+
 The bottleneck is still human review bandwidth. More agents are not useful if nobody can review the output.
 
 ---
