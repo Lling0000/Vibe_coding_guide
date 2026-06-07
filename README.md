@@ -2,189 +2,192 @@
 
 # Vibe Coding Guide
 
-**Move AI coding from prompt experiments to a reviewable engineering workflow.**
+**把 AI Coding 从 prompt 实验，升级为可审查、可验证、可交付的工程工作流。**
 
-Language: English | [中文](./README.zh-CN.md)
+语言：中文 | [English](./README.en.md)
 
-[Start on the Website](https://lling0000.github.io/Vibe_coding_guide/) ·
+[网站学习清单](https://lling0000.github.io/Vibe_coding_guide/) ·
+[中文完整教程](./vibe-coding-guide-zh.md) ·
 [English Guide](./vibe-coding-guide-en.md) ·
-[中文教程](./vibe-coding-guide-zh.md) ·
-[Roadmap](./docs/roadmap.md)
+[路线图](./docs/roadmap.md)
 
-[English PDF](./vibe-coding-guide-en.pdf) ·
 [中文 PDF](./vibe-coding-guide-zh.pdf) ·
-[Contributing](./CONTRIBUTING.md)
+[English PDF](./vibe-coding-guide-en.pdf) ·
+[贡献指南](./CONTRIBUTING.md)
 
-![Guide](https://img.shields.io/badge/type-field%20guide-111827)
-![Scope](https://img.shields.io/badge/scope-AI%20coding%20workflow-0f766e)
-![Languages](https://img.shields.io/badge/languages-English%20%7C%20Chinese-2563eb)
-![Chapters](https://img.shields.io/badge/chapters-16-b84d37)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Learning%20Checklist-0f766e?logo=githubpages&logoColor=white)](https://lling0000.github.io/Vibe_coding_guide/)
+[![Docs CI](https://github.com/Lling0000/Vibe_coding_guide/actions/workflows/docs.yml/badge.svg)](https://github.com/Lling0000/Vibe_coding_guide/actions/workflows/docs.yml)
+[![Chinese Guide](https://img.shields.io/badge/Chinese%20Guide-16%20chapters-2563eb)](./vibe-coding-guide-zh.md)
+[![English Guide](https://img.shields.io/badge/English%20Guide-16%20chapters-111827)](./vibe-coding-guide-en.md)
+[![Topic: AI Coding](https://img.shields.io/badge/topic-AI%20Coding-b84d37)](https://github.com/topics/ai-coding)
+[![Content: CC BY 4.0](https://img.shields.io/badge/content-CC%20BY%204.0-6b7280)](./LICENSE-CONTENT)
+[![Code: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](./LICENSE)
 
 </div>
 
 ---
 
-## What This Is
+## 这是什么
 
-AI coding breaks down when it stays at the prompt-to-code level: vague requests produce plausible diffs, long chats lose context, parallel agents collide, and "looks right" replaces verification.
+AI Coding 如果停留在 prompt 到代码的玩具阶段，很快就会失控：需求模糊但 diff 看起来合理，长会话丢上下文，并行 Agent 相互踩踏，“看起来没问题”替代了真正验证。
 
-Vibe Coding Guide solves that gap by treating AI coding as an engineering workflow: a repeatable loop for specifying work, feeding agents the right context, reviewing changes, testing behavior, committing safely, and handing work off. It is not a collection of magic prompts; it is the operating system around AI-assisted development:
+Vibe Coding Guide 解决的就是这个断层：把 AI Coding 当成一套工程工作流来管理，从 spec、上下文、计划、实现、review、测试、提交到交接，都要可重复、可审查、可恢复。它不是 prompt 话术合集，而是 AI 辅助开发周围的完整操作系统：
 
-- specs that turn vague intent into a contract
-- durable project context through `AGENTS.md` / `CLAUDE.md`
-- context-window hygiene, compression, handoff, and reset habits
-- subagents, workflow patterns, and multi-agent coordination
-- git worktrees for parallel agent development
-- reusable skills for repeated tasks
-- CI, tests, and review habits for agent-written code
+- 用 spec 把模糊需求变成可验收的契约
+- 用 `AGENTS.md` / `CLAUDE.md` 沉淀项目级上下文
+- 管理上下文窗口、压缩、交接、重开和复盘
+- 使用 subagent、workflow 和多 Agent 协作模式
+- 用 git worktree 隔离并行 Agent 开发
+- 把重复任务固化为 skill
+- 用 CI、测试和 diff review 管住 Agent 写出来的代码
 
-The goal is not to "let AI code for you." The goal is to become a stronger operator of AI coding agents.
+目标不是“让 AI 替你写代码”。目标是让你成为更强的 AI Coding Agent 操作者。
 
-## Start Here
+## 快速入口
 
-| If you are... | Start with | What you should do first |
+| 你的状态 | 从这里开始 | 第一件事 |
 |---|---|---|
-| Skimming before starring | [Website](https://lling0000.github.io/Vibe_coding_guide/) | Open the 16-day Feynman checklist and read the first day |
-| Reading in English | [vibe-coding-guide-en.md](./vibe-coding-guide-en.md) | Read chapters 1-5 before copying any workflow |
-| Reading in Chinese | [README.zh-CN.md](./README.zh-CN.md) | Use the Chinese entry page, then jump into the full guide |
-| Using Codex, Claude Code, Cursor, or Aider | Chapters 1-5 | Write one real spec and one project `AGENTS.md` / `CLAUDE.md` |
-| Running multiple agents or sessions | Chapters 6-9 | Learn subagents, workflow patterns, `.gitignore`, and worktrees |
-| Rolling this out to a team | Chapters 10-13 | Turn repeated work into skills and add CI/testing guardrails |
-| Auditing your own habits | Chapters 14-16 | Compare your current workflow against the anti-pattern checklist |
+| 想快速判断值不值得收藏 | [网站学习清单](https://lling0000.github.io/Vibe_coding_guide/) | 打开 16 天费曼清单，先看 Day 1 |
+| 想系统阅读中文内容 | [vibe-coding-guide-zh.md](./vibe-coding-guide-zh.md) | 先读第 1-5 章，建立基本工作方式 |
+| 想阅读英文版本 | [README.en.md](./README.en.md) | 从英文首页进入完整教程 |
+| 正在用 Codex、Claude Code、Cursor、Aider | 第 1-5 章 | 给一个真实项目写 spec 和 `AGENTS.md` / `CLAUDE.md` |
+| 想多 Agent / 多 session 并行 | 第 6-9 章 | 学 subagent、workflow、`.gitignore` 和 worktree |
+| 想做团队级落地 | 第 10-13 章 | 把重复任务做成 skill，并补 CI / 测试护栏 |
+| 想检查自己的坏习惯 | 第 14-16 章 | 用反模式清单审查自己的日常工作流 |
 
-## The Engineering Loop
+## 核心工程循环
 
 ```mermaid
 flowchart LR
-    A["Spec"] --> B["Context"]
-    B --> C["Agent Plan"]
-    C --> D["Implementation"]
-    D --> E["Diff Review"]
-    E --> F["Tests and CI"]
-    F --> G["Commit"]
-    G --> H["Docs and Handoff"]
+    A["Spec"] --> B["上下文"]
+    B --> C["Agent 计划"]
+    C --> D["实现"]
+    D --> E["Diff 审查"]
+    E --> F["测试和 CI"]
+    F --> G["提交"]
+    G --> H["文档和交接"]
     H --> A
 ```
 
-Vibe Coding works when this loop is explicit. Every phase should leave evidence in files, diffs, command output, tests, or commits.
+Vibe Coding 的关键，是让这个循环显性化。每一步都应该留下证据：文件、diff、命令输出、测试结果或 commit。
 
-## How This Differs From a Prompt Guide
+## 它和普通 Prompt Guide 有什么不同
 
-| Ordinary prompt guide | Vibe Coding Guide |
+| 普通 prompt 指南 | Vibe Coding Guide |
 |---|---|
-| Optimizes a single request | Optimizes the whole engineering loop around the request |
-| Asks "what should I type?" | Asks "what system makes agent work reviewable?" |
-| Focuses on phrasing | Focuses on specs, context, files, git, CI, tests, and handoff |
-| Measures success by a plausible answer | Measures success by a diff that satisfies acceptance checks |
-| Treats chat history as memory | Moves durable knowledge into `AGENTS.md`, specs, docs, and skills |
-| Relies on manual recovery | Uses worktrees, commits, resets, and review gates to recover cleanly |
+| 优化一次提问 | 优化一次提问周围的完整工程循环 |
+| 关心“我该怎么说” | 关心“什么系统能让 Agent 的工作可审查” |
+| 重点是话术 | 重点是 spec、上下文、文件、git、CI、测试和交接 |
+| 用“回答看起来合理”衡量成功 | 用“diff 满足验收标准”衡量成功 |
+| 把聊天记录当记忆 | 把长期知识沉淀到 `AGENTS.md`、spec、docs 和 skill |
+| 走偏后靠手工补救 | 用 worktree、commit、reset 和 review gate 干净恢复 |
 
-## Core Concepts
+## 核心概念
 
-| Concept | Plain meaning | Why it matters |
+| 概念 | 一句话解释 | 为什么重要 |
 |---|---|---|
-| Spec | The contract for what the agent should change | Prevents vague work and gives you acceptance criteria |
-| Context | The files, rules, history, and examples the agent can use | Keeps the agent focused on the right local reality |
-| Agent plan | The proposed route before edits begin | Lets you stop bad direction before it becomes code |
-| Subagent | A separate worker for isolated search, review, or analysis | Keeps the main session from filling with unrelated context |
-| Workflow | A deterministic sequence of steps around the agent | Makes collaboration repeatable instead of improvised |
-| Worktree | A separate checkout for parallel work | Lets multiple agents move without stepping on each other |
-| Skill | A reusable task procedure | Turns repeated prompts into maintained operating knowledge |
-| CI/testing | Automated evidence that work still behaves | Replaces "looks right" with repeatable verification |
+| Spec | Agent 要改什么的契约 | 避免模糊任务，提供验收标准 |
+| Context | Agent 能使用的文件、规则、历史和例子 | 让 Agent 贴近项目真实情况 |
+| Agent plan | 动手前的实施路线 | 在写出代码前拦住错误方向 |
+| Subagent | 用于独立搜索、审查或分析的隔离工人 | 避免主会话被无关上下文塞满 |
+| Workflow | 围绕 Agent 的确定性步骤编排 | 让协作可复用，而不是临场发挥 |
+| Worktree | 独立的 git 工作目录 | 让多个 Agent 并行但互不踩踏 |
+| Skill | 可复用的任务流程 | 把重复 prompt 变成可维护的操作知识 |
+| CI / 测试 | 可重复的验证证据 | 用自动化代替“看起来没问题” |
 
-## Learning Paths
+## 推荐学习路径
 
-**30-minute orientation**
+**30 分钟建立方向感**
 
-1. Read chapters 1-2 to understand the role shift from typing code to directing agent attention.
-2. Skim chapter 3 and write a tiny `AGENTS.md` / `CLAUDE.md` for one repository.
-3. Open the website checklist and write a three-minute explanation of the core loop.
+1. 读第 1-2 章，理解“写字符”到“管理 Agent 注意力”的角色变化。
+2. 浏览第 3 章，给一个真实仓库写一个极简 `AGENTS.md` / `CLAUDE.md`。
+3. 打开网站学习清单，用 3 分钟讲清楚核心循环。
 
-**First real project**
+**第一个真实项目**
 
-1. Write a lightweight spec for a small change.
-2. Ask the agent for a plan before edits.
-3. Review the diff, run verification, and commit.
-4. Record one mistake or local convention back into project docs.
+1. 给一个小改动写轻量 spec。
+2. 要求 Agent 先给计划，再允许它动手。
+3. 看 diff，跑验证，提交。
+4. 把 Agent 犯过的一个错写回项目文档。
 
-**Parallel agent practice**
+**多 Agent 并行实践**
 
-1. Read chapters 6-9.
-2. Give broad discovery to a subagent or separate session.
-3. Put risky implementation in a dedicated git worktree.
-4. Merge only after review and tests pass.
+1. 阅读第 6-9 章。
+2. 把大范围搜索、审查或对比交给 subagent / 独立 session。
+3. 把风险实现放进独立 git worktree。
+4. 只在 review 和测试通过后合并。
 
-**Team adoption**
+**团队级落地**
 
-1. Read chapters 10-13.
-2. Convert one repeated workflow into a skill.
-3. Add CI rules to the project agent guide.
-4. Build a small case library for evaluating agent behavior.
+1. 阅读第 10-13 章。
+2. 把一个重复工作流写成 skill。
+3. 在项目 Agent 指南中写清 CI 规则。
+4. 建一个小型 case 库，用行为证据测试 Agent。
 
-## Chapter Map
+## 章节地图
 
-| Phase | Chapters | Outcome |
+| 阶段 | 章节 | 结果 |
 |---|---:|---|
-| Foundations | 1-5 | Write better specs, maintain project context, and manage long sessions |
-| Coordination | 6-9 | Use subagents, workflow patterns, `.gitignore`, and worktrees |
-| Reuse and guardrails | 10-13 | Create skills, separate prompt layers, add CI/CD, and test agent behavior |
-| Judgment | 14-16 | Build durable habits and spot failure modes early |
+| 基础 | 1-5 | 写好 spec，维护项目上下文，管理长会话 |
+| 协作 | 6-9 | 使用 subagent、workflow、`.gitignore` 和 worktree |
+| 复用与护栏 | 10-13 | 创建 skill，区分提示词层级，增加 CI/CD 和行为测试 |
+| 判断力 | 14-16 | 建立稳定习惯，提前识别失败模式 |
 
-| Chapter | Topic |
+| 章节 | 主题 |
 |---:|---|
-| 1 | What Vibe Coding is and how your role changes |
-| 2 | Specs as the starting point for useful agent work |
-| 3 | What belongs in `AGENTS.md` / `CLAUDE.md` |
-| 4 | Cold-starting new and inherited projects |
-| 5 | Context management, compression, handoffs, and resets |
-| 6 | Subagents and context isolation |
-| 7 | Workflow patterns and multi-agent collaboration |
-| 8 | `.gitignore` as repository hygiene |
-| 9 | Git worktrees for parallel agent development |
-| 10 | Skills as reusable task workflows |
-| 11 | System prompts vs user prompts |
-| 12 | CI/CD guardrails for agent-written code |
-| 13 | Testing ordinary code and testing agent behavior |
-| 14 | Advanced operating principles |
-| 15 | A complete multi-day workflow example |
-| 16 | Anti-patterns checklist |
+| 1 | Vibe Coding 是什么，你的角色怎么变化 |
+| 2 | Spec 为什么是一切的起点 |
+| 3 | `AGENTS.md` / `CLAUDE.md` 应该写什么 |
+| 4 | 新项目和接手项目的冷启动 |
+| 5 | 上下文管理、压缩、交接、清零 |
+| 6 | Subagent 和上下文隔离 |
+| 7 | Workflow 和多 Agent 协作模式 |
+| 8 | `.gitignore` 和仓库卫生 |
+| 9 | Git worktree 支撑并行开发 |
+| 10 | Skill：把重复任务固化成工作流 |
+| 11 | System prompt 和 user prompt 的分工 |
+| 12 | CI/CD 给 Agent 代码加护栏 |
+| 13 | 测普通代码，也测 Agent 行为 |
+| 14 | 高阶操作原则 |
+| 15 | 一个完整多天工作流示例 |
+| 16 | 常见反模式速查 |
 
-## Repository Structure
+## 仓库结构
 
 ```text
 .
-├── index.html                 # GitHub Pages checklist and reader entry
-├── assets/                    # Site styles, script, and visual asset
+├── index.html                 # GitHub Pages 学习清单和阅读入口
+├── assets/                    # 网站样式、脚本和视觉资产
 ├── docs/
-│   └── roadmap.md             # Public roadmap and contribution priorities
+│   └── roadmap.md             # 公开路线图和贡献优先级
 ├── .github/workflows/
-│   └── docs.yml               # Docs-only sanity checks for local links
-├── README.md                  # English front door
-├── README.zh-CN.md            # Chinese front door
-├── README_zh.md               # Legacy Chinese entry link
-├── CONTRIBUTING.md            # Contribution guide
-├── vibe-coding-guide-en.md    # Full English tutorial
-├── vibe-coding-guide-en.pdf   # English PDF
-├── vibe-coding-guide-zh.md    # Full Chinese tutorial
-└── vibe-coding-guide-zh.pdf   # Chinese PDF
+│   └── docs.yml               # 文档内部链接检查
+├── README.md                  # 中文仓库首页（默认入口）
+├── README.en.md               # 英文仓库首页
+├── README.zh-CN.md            # 中文仓库首页兼容入口
+├── README_zh.md               # 旧中文入口链接
+├── CONTRIBUTING.md            # 贡献指南
+├── vibe-coding-guide-en.md    # 英文完整教程
+├── vibe-coding-guide-en.pdf   # 英文 PDF
+├── vibe-coding-guide-zh.md    # 中文完整教程
+└── vibe-coding-guide-zh.pdf   # 中文 PDF
 ```
 
-## Project Status
+## 项目状态
 
-This is a documentation-first repository. The full bilingual guides and PDFs are already included, and the GitHub Pages site provides a 16-day Feynman-style learning checklist with local browser progress.
+这是一个文档优先的仓库。当前已经包含完整中英教程、PDF，以及带 16 天费曼学习清单的 GitHub Pages 站点；网站进度保存在浏览器本地。
 
-There is currently no package manager setup because the site is plain static HTML/CSS/JavaScript. The CI added here only checks repository-facing documentation links; it does not build or publish a package.
+仓库目前没有 package manager 配置，因为站点是纯静态 HTML/CSS/JavaScript。这里补充的 CI 只检查仓库前门文档的本地链接，不构建或发布包。
 
-## Contributing
+## 参与贡献
 
-Good contributions make the guide more concrete, verifiable, and useful in real workflows. See [CONTRIBUTING.md](./CONTRIBUTING.md) and [docs/roadmap.md](./docs/roadmap.md) before opening a pull request.
+好的贡献应该让指南更具体、更可验证、更贴近日常工程工作流。提交 PR 前建议先阅读 [CONTRIBUTING.md](./CONTRIBUTING.md) 和 [docs/roadmap.md](./docs/roadmap.md)。
 
-## License
+## 许可
 
-This repository uses a dual-license model:
+本仓库采用双许可证模型:
 
-- Documentation, guides, PDFs, and written instructional content are licensed under [CC BY 4.0](./LICENSE-CONTENT).
-- Website code, scripts, styles, and other software source files are licensed under the [MIT License](./LICENSE).
+- 文档、指南、PDF 和文字教学内容采用 [CC BY 4.0](./LICENSE-CONTENT) 授权。
+- 网站代码、脚本、样式和其他软件源文件采用 [MIT License](./LICENSE) 授权。
 
-If a file does not say otherwise, use the license that matches its primary purpose: written guide content uses CC BY 4.0; executable or reusable code uses MIT.
+如果某个文件没有单独说明,按它的主要用途判断:文字指南内容按 CC BY 4.0;可执行或可复用代码按 MIT。
