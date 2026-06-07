@@ -6,7 +6,7 @@
 
 Language: English | [中文](./README.md)
 
-[Start on the Website](https://lling0000.github.io/Vibe_coding_guide/) ·
+[Interactive Tutorial Website](https://lling0000.github.io/Vibe_coding_guide/) ·
 [English Guide](./vibe-coding-guide-en.md) ·
 [中文教程](./vibe-coding-guide-zh.md) ·
 [Roadmap](./docs/roadmap.md)
@@ -15,7 +15,7 @@ Language: English | [中文](./README.md)
 [中文 PDF](./vibe-coding-guide-zh.pdf) ·
 [Contributing](./CONTRIBUTING.md)
 
-[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Reader%20%26%20Checklist-0f766e?logo=githubpages&logoColor=white)](https://lling0000.github.io/Vibe_coding_guide/)
+[![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Tutorial%20Website-0f766e?logo=githubpages&logoColor=white)](https://lling0000.github.io/Vibe_coding_guide/)
 [![Docs CI](https://github.com/Lling0000/Vibe_coding_guide/actions/workflows/docs.yml/badge.svg)](https://github.com/Lling0000/Vibe_coding_guide/actions/workflows/docs.yml)
 [![English Guide](https://img.shields.io/badge/English%20Guide-16%20chapters-111827)](./vibe-coding-guide-en.md)
 [![Chinese Guide](https://img.shields.io/badge/Chinese%20Guide-16%20chapters-2563eb)](./vibe-coding-guide-zh.md)
@@ -47,7 +47,7 @@ The goal is not to "let AI code for you." The goal is to become a stronger opera
 
 | If you are... | Start with | What you should do first |
 |---|---|---|
-| Skimming before starring | [Website](https://lling0000.github.io/Vibe_coding_guide/) | Open the 16-day Feynman checklist and read the first day |
+| Trying the guide online before starring | [Interactive Tutorial Website](https://lling0000.github.io/Vibe_coding_guide/) | Open the website, start with Day 1, and follow the 16-day learning path |
 | Reading in English | [vibe-coding-guide-en.md](./vibe-coding-guide-en.md) | Read chapters 1-5 before copying any workflow |
 | Reading in Chinese | [README.md](./README.md) | Use the Chinese entry page, then jump into the full guide |
 | Using Codex, Claude Code, Cursor, or Aider | Chapters 1-5 | Write one real spec and one project `AGENTS.md` / `CLAUDE.md` |
@@ -101,7 +101,7 @@ Vibe Coding works when this loop is explicit. Every phase should leave evidence 
 
 1. Read chapters 1-2 to understand the role shift from typing code to directing agent attention.
 2. Skim chapter 3 and write a tiny `AGENTS.md` / `CLAUDE.md` for one repository.
-3. Open the website checklist and write a three-minute explanation of the core loop.
+3. Open the interactive tutorial website and write a three-minute explanation of the core loop.
 
 **First real project**
 
@@ -156,7 +156,7 @@ Vibe Coding works when this loop is explicit. Every phase should leave evidence 
 
 ```text
 .
-├── index.html                 # GitHub Pages checklist and reader entry
+├── index.html                 # GitHub Pages tutorial website and reader entry
 ├── assets/                    # Site styles, script, and visual asset
 ├── docs/
 │   └── roadmap.md             # Public roadmap and contribution priorities
@@ -175,7 +175,7 @@ Vibe Coding works when this loop is explicit. Every phase should leave evidence 
 
 ## Project Status
 
-This is a documentation-first repository. The full bilingual guides and PDFs are already included, and the GitHub Pages site provides a 16-day Feynman-style learning checklist with local browser progress.
+This is a documentation-first repository. The full bilingual guides and PDFs are already included, and the GitHub Pages tutorial website lets readers study the guide directly in the browser with a 16-day Feynman-style learning path and local progress tracking.
 
 There is currently no package manager setup because the site is plain static HTML/CSS/JavaScript. The CI added here only checks repository-facing documentation links; it does not build or publish a package.
 

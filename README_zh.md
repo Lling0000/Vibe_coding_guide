@@ -9,6 +9,6 @@
 - [中文首页](./README.md)
 - [中文兼容入口](./README.zh-CN.md)
 - [中文完整教程](./vibe-coding-guide-zh.md)
-- [网站学习清单](https://lling0000.github.io/Vibe_coding_guide/)
+- [在线教程网站](https://lling0000.github.io/Vibe_coding_guide/)
 - [English README](./README.en.md)
 - [许可证说明](./README.md#许可)
