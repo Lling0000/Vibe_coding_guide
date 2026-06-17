@@ -1057,17 +1057,6 @@ button:disabled {
   font-size: 1rem;
 }
 
-.reader-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  min-height: 4rem;
-  border-bottom: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
 .reader-shell {
   display: grid;
   grid-template-columns: minmax(0, var(--reader-content)) minmax(16rem, var(--reader-rail));
@@ -1761,13 +1750,6 @@ button:disabled {
 
   .section-heading.split .text-button {
     width: fit-content;
-  }
-
-  .reader-toolbar {
-    align-items: flex-start;
-    flex-direction: column;
-    justify-content: center;
-    padding: 0.75rem 0;
   }
 
   .chapter-pager {
