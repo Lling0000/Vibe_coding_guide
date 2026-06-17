@@ -251,17 +251,23 @@ button:disabled {
 }
 
 .sidebar {
+  position: fixed;
+  top: 4.4rem;
+  bottom: 0;
+  left: 0;
+  z-index: 20;
+  width: var(--sidebar);
+  overflow: hidden;
   border-right: 1px solid var(--line);
   background: rgb(255 255 255 / 72%);
 }
 
 .sidebar-sticky {
-  position: sticky;
-  top: 4.4rem;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  max-height: calc(100vh - 4.4rem);
   padding: 1rem;
 }
 
@@ -340,6 +346,8 @@ button:disabled {
 }
 
 .day-rail {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   padding-right: 0.1rem;
 }
@@ -446,6 +454,8 @@ button:disabled {
 }
 
 .toc {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   padding-right: 0.15rem;
 }
@@ -484,6 +494,7 @@ button:disabled {
 }
 
 .workspace {
+  grid-column: 2;
   min-width: 0;
   max-width: 100%;
 }
@@ -1245,9 +1256,15 @@ button:disabled {
   }
 
   .sidebar {
-    position: sticky;
+    position: fixed;
     top: 4.4rem;
+    right: 0;
+    bottom: auto;
+    left: 0;
     z-index: 20;
+    width: auto;
+    height: auto;
+    overflow: visible;
     border-right: 0;
     border-bottom: 1px solid var(--line);
     background: rgb(246 250 248 / 95%);
@@ -1258,7 +1275,7 @@ button:disabled {
     position: static;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    max-height: none;
+    height: auto;
     padding: 0.75rem 1rem;
   }
 
@@ -1321,6 +1338,11 @@ button:disabled {
   .reader-view {
     padding-top: 1rem;
   }
+
+  .workspace {
+    grid-column: auto;
+    padding-top: 6.9rem;
+  }
 }
 
 @media (max-width: 760px) {
@@ -1376,6 +1398,10 @@ button:disabled {
 
   .sidebar {
     top: 6rem;
+  }
+
+  .workspace {
+    padding-top: 7.1rem;
   }
 
   .learning-hero h1,
