@@ -340,7 +340,7 @@ const copy = {
     finishSummary: (day) => `把「${scheduleLabel("zh", day)}」各写成一句 if-then 规则。`,
     finishAction: "从今天的新学或复习里选一个点，变成今天能执行的微动作。",
     finishQuestion: "记录一个讲不顺的点，并回原文补一个证据。",
-    reviewLabel: (review) => `Review ${review.reviewNumber} · +${review.offset}d`,
+    reviewLabel: (review) => `第 ${review.chapterIndex} 章 · Review ${review.reviewNumber} · +${review.offset}d`,
     reviewTitle: (review) => `间隔复习: ${review.chapter.title}`,
     reviewFocus: (review) =>
       `第 ${review.reviewNumber} 次复习：不重读整章，先复述，卡住才回原文。`,
@@ -411,7 +411,7 @@ const copy = {
     finishSummary: (day) => `Turn "${scheduleLabel("en", day)}" into one if-then rule each.`,
     finishAction: "Choose one point from today's new or review work and turn it into a micro-action.",
     finishQuestion: "Record one point that still feels hard to explain, then repair it from the guide.",
-    reviewLabel: (review) => `Review ${review.reviewNumber} · +${review.offset}d`,
+    reviewLabel: (review) => `Ch. ${review.chapterIndex} · Review ${review.reviewNumber} · +${review.offset}d`,
     reviewTitle: (review) => `Spaced review: ${review.chapter.title}`,
     reviewFocus: (review) =>
       `Review ${review.reviewNumber}: explain first, then reopen the guide only where you get stuck.`,
