@@ -1,4 +1,4 @@
-const DAY_COUNT = 16;
+const DAY_COUNT = 19;
 
 const docs = {
   zh: {
@@ -56,36 +56,48 @@ const chapters = {
       focus: "判断什么时候继续、压缩、交接或重开，保护会话质量。",
     },
     {
+      title: "MCP:给 Agent 接上工具与外部上下文",
+      focus: "用 MCP 把 GitHub、数据库、Sentry 等外部能力接入 Agent。",
+    },
+    {
       title: "Subagent 的使用",
       focus: "把独立问题交给子 Agent，用隔离上下文降低主线噪音。",
     },
     {
-      title: "Agent 协作模式与 Workflow:把任务编排明白",
+      title: "Agent 协作模式与 Workflow",
       focus: "区分 workflow 和 autonomous agent，选择合适的协作模式。",
     },
     {
-      title: "`.gitignore`:你必须懂的一个文件",
-      focus: "用仓库卫生保护密钥、缓存、产物和 Agent 临时文件。",
+      title: "仓库卫生与 Git Worktree",
+      focus: "用 .gitignore 和 worktree 保护仓库并隔离多 Agent 并行。",
     },
     {
-      title: "Codex 工作树:多 Agent 并行的硬件基础",
-      focus: "用 git worktree 隔离多个 Agent 的动手现场。",
+      title: "云端 / 后台 / 异步 Agent",
+      focus: "用云端 Agent 和 loop engineering 做长周期、目标驱动的自动化。",
     },
     {
-      title: "Skill 的创建:把重复模式固化下来",
+      title: "Skill 的创建",
       focus: "把反复做的任务沉淀成可调用、可迭代的工作流。",
     },
     {
-      title: "系统提示词 vs User 提示词:Agent 行为的\"硬件 vs 输入\"",
+      title: "系统提示词 vs User 提示词",
       focus: "把长期行为约束和一次性任务输入分层管理。",
     },
     {
-      title: "CI/CD:让 Agent 在你睡觉时干活",
-      focus: "用自动化验证和部署流程给 Agent 产出加护栏。",
+      title: "CI/CD",
+      focus: "用自动化验证、HTML artifact 审查和 review 给 Agent 产出加护栏。",
     },
     {
-      title: "测试:让 Agent 写代码容易,让 Agent 写出\"对的\"代码难",
-      focus: "既测试普通代码，也用 case 和证据测试 Agent 行为。",
+      title: "Hooks:确定性护栏",
+      focus: "在工具调用前后用脚本拦截危险操作，补 AGENTS.md 约束。",
+    },
+    {
+      title: "测试",
+      focus: "既测试普通代码，也用 TDD 和 eval harness 测试 Agent 行为。",
+    },
+    {
+      title: "安全:Prompt 注入与 Agent 权限",
+      focus: "理解 lethal trifecta，最小化权限并配合 Hooks 与 CI。",
     },
     {
       title: "几个高阶心法",
@@ -122,6 +134,10 @@ const chapters = {
       focus: "Decide when to continue, compress, hand off, or reset a session.",
     },
     {
+      title: "MCP",
+      focus: "Connect GitHub, databases, Sentry, and other external tools through MCP.",
+    },
+    {
       title: "Using Subagents",
       focus: "Delegate isolated questions while protecting the main thread from noise.",
     },
@@ -130,12 +146,12 @@ const chapters = {
       focus: "Separate workflows from autonomous agents and choose the right collaboration shape.",
     },
     {
-      title: "`.gitignore`: The Hygiene File",
-      focus: "Keep secrets, caches, build output, and agent scratch files out of version control.",
+      title: "Repository Hygiene and Git Worktrees",
+      focus: "Use .gitignore and worktrees to protect the repo and isolate parallel agent work.",
     },
     {
-      title: "Git Worktrees and Codex Worktrees",
-      focus: "Use worktrees to isolate parallel agent work.",
+      title: "Cloud, Background, and Async Agents",
+      focus: "Run cloud agents and loop engineering for long, goal-driven automation.",
     },
     {
       title: "Creating Skills",
@@ -147,11 +163,19 @@ const chapters = {
     },
     {
       title: "CI/CD for Agent-Written Code",
-      focus: "Use automation to guardrail agent output while you are away.",
+      focus: "Use automation, HTML artifact review, and review skills to guardrail agent output.",
+    },
+    {
+      title: "Hooks",
+      focus: "Use deterministic scripts before and after tool calls to block unsafe actions.",
     },
     {
       title: "Testing Code and Testing Agent Behavior",
-      focus: "Test regular code and evaluate agent behavior with cases and evidence.",
+      focus: "Test regular code and agent behavior with TDD and eval harnesses.",
+    },
+    {
+      title: "Security",
+      focus: "Understand the lethal trifecta, minimize permissions, and pair with hooks and CI.",
     },
     {
       title: "Advanced Principles",
@@ -174,11 +198,11 @@ const copy = {
     plannerMode: "学习清单",
     readerMode: "全文阅读",
     navKicker: "Feynman Loop",
-    navTitle: "16 天工程清单",
+    navTitle: "19 天工程清单",
     navCopy: "每天复习旧章节，再把一章落到真实工作流。",
     sideProgress: "总进度",
     resetAll: "重置全部进度",
-    resetAllConfirm: "确定要清空 16 天的所有学习进度吗?",
+    resetAllConfirm: "确定要清空 19 天的所有学习进度吗?",
     plannerKicker: "Engineering Sprint",
     dayTitle: (day) => `Day ${day}: 累计学到第 ${day} 部分`,
     daySummary: (day) => {
@@ -235,11 +259,11 @@ const copy = {
     plannerMode: "Checklist",
     readerMode: "Reader",
     navKicker: "Feynman Loop",
-    navTitle: "16-Day Engineering Checklist",
+    navTitle: "19-Day Engineering Checklist",
     navCopy: "Review previous parts, then apply one new chapter to real work.",
     sideProgress: "Overall",
     resetAll: "Reset all progress",
-    resetAllConfirm: "Clear all progress for the 16-day plan?",
+    resetAllConfirm: "Clear all progress for the 19-day plan?",
     plannerKicker: "Engineering Sprint",
     dayTitle: (day) => `Day ${day}: cumulative study through Part ${day}`,
     daySummary: (day) => {
@@ -516,7 +540,7 @@ function setLanguageChrome(lang) {
   els.readerKicker.textContent = text.readerKicker;
   els.readerTitle.textContent = doc.title;
   els.readerSummary.textContent = doc.summary;
-  els.metricChapters.innerHTML = `<strong>16</strong> ${doc.metrics.chapters}`;
+  els.metricChapters.innerHTML = `<strong>${DAY_COUNT}</strong> ${doc.metrics.chapters}`;
   els.metricLanguages.innerHTML = `<strong>2</strong> ${doc.metrics.languages}`;
   els.metricPdf.innerHTML = `<strong>PDF</strong> ${doc.metrics.pdf}`;
 

@@ -9,7 +9,7 @@ The repository already includes:
 - a full Chinese guide
 - a full English guide
 - PDF versions for both languages
-- a GitHub Pages reader and 16-day Feynman learning checklist
+- a GitHub Pages reader and 19-day Feynman learning checklist
 - front-door documentation for English and Chinese readers
 
 The next work should make the guide easier to apply, verify, and share without inventing product claims that are not present in the repository.

@@ -17,8 +17,8 @@ Language: English | [中文](./README.md)
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Tutorial%20Website-0f766e?logo=githubpages&logoColor=white)](https://lling0000.github.io/Vibe_coding_guide/)
 [![Docs CI](https://github.com/Lling0000/Vibe_coding_guide/actions/workflows/docs.yml/badge.svg)](https://github.com/Lling0000/Vibe_coding_guide/actions/workflows/docs.yml)
-[![English Guide](https://img.shields.io/badge/English%20Guide-16%20chapters-111827)](./vibe-coding-guide-en.md)
-[![Chinese Guide](https://img.shields.io/badge/Chinese%20Guide-16%20chapters-2563eb)](./vibe-coding-guide-zh.md)
+[![English Guide](https://img.shields.io/badge/English%20Guide-19%20chapters-111827)](./vibe-coding-guide-en.md)
+[![Chinese Guide](https://img.shields.io/badge/Chinese%20Guide-19%20chapters-2563eb)](./vibe-coding-guide-zh.md)
 [![Topic: AI Coding](https://img.shields.io/badge/topic-AI%20Coding-b84d37)](https://github.com/topics/ai-coding)
 [![Content: CC BY 4.0](https://img.shields.io/badge/content-CC%20BY%204.0-6b7280)](./LICENSE-CONTENT)
 [![Code: MIT](https://img.shields.io/badge/code-MIT-blue.svg)](./LICENSE)
@@ -47,13 +47,13 @@ The goal is not to "let AI code for you." The goal is to become a stronger opera
 
 | If you are... | Start with | What you should do first |
 |---|---|---|
-| Trying the guide online before starring | [Interactive Tutorial Website](https://lling0000.github.io/Vibe_coding_guide/) | Open the website, start with Day 1, and follow the 16-day learning path |
+| Trying the guide online before starring | [Interactive Tutorial Website](https://lling0000.github.io/Vibe_coding_guide/) | Open the website, start with Day 1, and follow the 19-day learning path |
 | Reading in English | [vibe-coding-guide-en.md](./vibe-coding-guide-en.md) | Read chapters 1-5 before copying any workflow |
 | Reading in Chinese | [README.md](./README.md) | Use the Chinese entry page, then jump into the full guide |
 | Using Codex, Claude Code, Cursor, or Aider | Chapters 1-5 | Write one real spec and one project `AGENTS.md` / `CLAUDE.md` |
 | Running multiple agents or sessions | Chapters 6-9 | Learn subagents, workflow patterns, `.gitignore`, and worktrees |
 | Rolling this out to a team | Chapters 10-13 | Turn repeated work into skills and add CI/testing guardrails |
-| Auditing your own habits | Chapters 14-16 | Compare your current workflow against the anti-pattern checklist |
+| Auditing your own habits | Chapter 19 | Compare your current workflow against the anti-pattern checklist |
 
 ## The Engineering Loop
 
@@ -129,9 +129,9 @@ Vibe Coding works when this loop is explicit. Every phase should leave evidence 
 | Phase | Chapters | Outcome |
 |---|---:|---|
 | Foundations | 1-5 | Write better specs, maintain project context, and manage long sessions |
-| Coordination | 6-9 | Use subagents, workflow patterns, `.gitignore`, and worktrees |
-| Reuse and guardrails | 10-13 | Create skills, separate prompt layers, add CI/CD, and test agent behavior |
-| Judgment | 14-16 | Build durable habits and spot failure modes early |
+| Tools and coordination | 6-10 | MCP, subagents, workflows, worktrees, cloud/loop agents |
+| Reuse and guardrails | 11-15 | Skills, prompt layers, CI/CD, hooks, and testing |
+| Security and judgment | 16-19 | Security, advanced principles, workflow example, anti-patterns |
 
 | Chapter | Topic |
 |---:|---|
@@ -140,17 +140,20 @@ Vibe Coding works when this loop is explicit. Every phase should leave evidence 
 | 3 | What belongs in `AGENTS.md` / `CLAUDE.md` |
 | 4 | Cold-starting new and inherited projects |
 | 5 | Context management, compression, handoffs, and resets |
-| 6 | Subagents and context isolation |
-| 7 | Workflow patterns and multi-agent collaboration |
-| 8 | `.gitignore` as repository hygiene |
-| 9 | Git worktrees for parallel agent development |
-| 10 | Skills as reusable task workflows |
-| 11 | System prompts vs user prompts |
-| 12 | CI/CD guardrails for agent-written code |
-| 13 | Testing ordinary code and testing agent behavior |
-| 14 | Advanced operating principles |
-| 15 | A complete multi-day workflow example |
-| 16 | Anti-patterns checklist |
+| 6 | MCP: connecting external tools and data |
+| 7 | Subagents and context isolation |
+| 8 | Workflow patterns and multi-agent collaboration |
+| 9 | Repository hygiene, `.gitignore`, and Git worktrees |
+| 10 | Cloud/background agents and loop engineering |
+| 11 | Skills as reusable task workflows |
+| 12 | System prompts vs user prompts |
+| 13 | CI/CD, HTML artifact review, and review skills |
+| 14 | Hooks as deterministic guardrails |
+| 15 | Testing code, TDD, and agent behavior |
+| 16 | Security: prompt injection and agent permissions |
+| 17 | Advanced operating principles |
+| 18 | A complete multi-day workflow example |
+| 19 | Anti-patterns checklist |
 
 ## Repository Structure
 
@@ -175,7 +178,7 @@ Vibe Coding works when this loop is explicit. Every phase should leave evidence 
 
 ## Project Status
 
-This is a documentation-first repository. The full bilingual guides and PDFs are already included, and the GitHub Pages tutorial website lets readers study the guide directly in the browser with a 16-day Feynman-style learning path and local progress tracking.
+This is a documentation-first repository. The full bilingual guides and PDFs are already included, and the GitHub Pages tutorial website lets readers study the guide directly in the browser with a 19-day Feynman-style learning path and local progress tracking.
 
 There is currently no package manager setup because the site is plain static HTML/CSS/JavaScript. The CI added here only checks repository-facing documentation links; it does not build or publish a package.
 

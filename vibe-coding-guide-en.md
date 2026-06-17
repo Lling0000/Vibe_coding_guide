@@ -6,24 +6,28 @@
 
 ## Table of Contents
 
-1. [What Is Vibe Coding?](#1-what-is-vibe-coding)
-2. [Specs: The Starting Point](#2-specs-the-starting-point)
-3. [What Goes Into AGENTS.md or CLAUDE.md](#3-what-goes-into-agentsmd-or-claudemd)
-4. [Cold Starts: Joining or Creating a Project](#4-cold-starts-joining-or-creating-a-project)
-5. [Context Management](#5-context-management)
-6. [Using Subagents](#6-using-subagents)
-7. [Agent Workflows and Collaboration Patterns](#7-agent-workflows-and-collaboration-patterns)
-8. [`.gitignore`: The Hygiene File](#8-gitignore-the-hygiene-file)
-9. [Git Worktrees and Codex Worktrees](#9-git-worktrees-and-codex-worktrees)
-10. [Creating Skills](#10-creating-skills)
-11. [System Prompts vs User Prompts](#11-system-prompts-vs-user-prompts)
-12. [CI/CD for Agent-Written Code](#12-cicd-for-agent-written-code)
-13. [Testing Code and Testing Agent Behavior](#13-testing-code-and-testing-agent-behavior)
-14. [Advanced Principles](#14-advanced-principles)
-15. [A Complete Workflow Example](#15-a-complete-workflow-example)
-16. [Anti-Patterns Checklist](#16-anti-patterns-checklist)
+1. [What Is Vibe Coding?](#chapter-01)
+2. [Specs](#chapter-02)
+3. [AGENTS.md](#chapter-03)
+4. [Cold Starts](#chapter-04)
+5. [Context Management](#chapter-05)
+6. [MCP](#chapter-06)
+7. [Using Subagents](#chapter-07)
+8. [Agent Workflows and Collaboration Patterns](#chapter-08)
+9. [Repository Hygiene and Git Worktrees](#chapter-09)
+10. [Cloud, Background, and Async Agents + Loop Engineering](#chapter-10)
+11. [Creating Skills](#chapter-11)
+12. [System Prompts](#chapter-12)
+13. [CI/CD](#chapter-13)
+14. [Hooks](#chapter-14)
+15. [Testing](#chapter-15)
+16. [Security](#chapter-16)
+17. [Advanced Principles](#chapter-17)
+18. [Complete Workflow Example](#chapter-18)
+19. [Anti-Patterns](#chapter-19)
 
 ---
+<a id="chapter-01"></a>
 
 ## 1. What Is Vibe Coding?
 
@@ -152,7 +156,10 @@ The agent's context window is a limited budget. If you fill it with old logs, ir
 
 ---
 
-## 2. Specs: The Starting Point
+---
+<a id="chapter-02"></a>
+
+## 2. Specs
 
 A spec is a clear description of what you want the agent to build. It can be a short chat message, a Markdown document, or an issue (a ticket on GitHub/GitLab/etc. used to record tasks, bugs, or requirements — essentially a structured description, which makes it a natural fit for a spec; agents can also read an issue link directly).
 
@@ -184,6 +191,8 @@ The agent needs to know what "done" means:
 - which command must pass
 - which UI flow must work
 - which edge cases must be covered
+
+Available Skill: [brainstorming.skill](https://github.com/obra/superpowers/blob/main/skills/brainstorming/SKILL.md) — use when clarifying requirements, proposing 2–3 options, or turning fuzzy ideas into a design draft.
 
 ### 2.2 Lightweight Specs
 
@@ -234,9 +243,14 @@ To be drafted and reviewed before implementation.
 
 The spec is not a one-time artifact. Update it when you discover a constraint, make a decision, or defer a scope item.
 
+Available Skill: [writing-plans.skill](https://github.com/obra/superpowers/blob/main/skills/writing-plans/SKILL.md) — use when breaking a confirmed spec into tasks, file paths, test commands, and an execution plan.
+
 ---
 
-## 3. What Goes Into AGENTS.md or CLAUDE.md
+---
+<a id="chapter-03"></a>
+
+## 3. AGENTS.md
 
 `AGENTS.md` and `CLAUDE.md` are project-level operating manuals for coding agents. Put them at the repository root unless a subdirectory needs more specific rules.
 
@@ -466,7 +480,10 @@ The most common pattern in real engineering is **mixed**:
 
 ---
 
-## 4. Cold Starts: Joining or Creating a Project
+---
+<a id="chapter-04"></a>
+
+## 4. Cold Starts
 
 Cold starts are where agents can help the most, but also where they can do the most damage if they start coding too early.
 
@@ -678,6 +695,9 @@ This gives both you and the agent a safe full loop: read, edit, test, commit.
 
 ---
 
+---
+<a id="chapter-05"></a>
+
 ## 5. Context Management
 
 Agent context is limited. Long sessions degrade.
@@ -753,7 +773,7 @@ A few notes from practice:
 
 - **`/review` is high-leverage**. Spending 30 seconds before commit on a separate agent's review consistently catches problems the original agent can't see — missed test updates, unnecessary new dependencies, naming inconsistent with the rest of the code.
 - **`/fork` fits "I want to try something risky without losing the main thread"**. Want to see what an aggressive refactor of a core function looks like, without polluting the main discussion? Fork, explore, throw it away if it doesn't work or merge the conclusion back if it does.
-- **`/plan` pairs with the "plan first, then code" habit**: for refactors, migrations, and cross-module work, `/plan` first to get candidate approaches (A/B/C), review, then execute. This is the standard usage now that plan modes have converged across tools (see Section 1.3).
+- **`/plan` pairs with the "plan first, then code" habit**: for refactors, migrations, and cross-module work, `/plan` first to get candidate approaches (A/B/C), review, then execute. This is the standard usage now that plan modes have converged across tools (see [Chapter 1: What Is Vibe Coding](#chapter-01)).
 
 ### 5.3 Emergency Recovery
 
@@ -776,7 +796,68 @@ Read AGENTS.md, the spec, and docs/notes/handoff.md.
 Continue from the previous session, but restate the plan before editing.
 ```
 
-### 5.4 Prevention
+
+### 5.4 Blocker Notes: Write a Chart When Stuck
+
+Available Skill: [systematic-debugging.skill](https://github.com/obra/superpowers/blob/main/skills/systematic-debugging/SKILL.md) — use for root-cause investigation; avoid guess-and-fix; stop after three failures and re-read architecture.
+
+When debugging stalls, the worst move is **keep chatting in the same overloaded session** — the agent repeats useless attempts, context gets noisier, and eventually nobody can say what was already tried.
+
+**When to write a blocker note**:
+
+- the same problem failed **2+ times**
+- debugging **20–30+ minutes** with no progress
+- context is messy (agent re-asks answered questions, repeats corrected mistakes)
+- the agent loops (plan A → B → A, or endless "try again")
+
+**Blocker note template** (`docs/notes/blocker-<topic>.md`):
+
+```markdown
+# Blocker: [short title]
+
+## Goal
+What are we doing? Spec link?
+
+## Current behavior
+Exact error / behavior? (key log lines only, not full dumps)
+
+## Already tried
+- [ ] Plan A: ... → result: failed because...
+- [ ] Plan B: ... → result:...
+
+## Evidence
+- relevant file paths
+- test / command output (summary)
+- git diff scope
+
+## Ruled out
+What have we confirmed is **not** the cause?
+
+## Current hypothesis
+I most suspect...
+
+## Next steps
+1. ...
+2. ...
+
+## Needs human decision
+Any fork that requires my call?
+```
+
+**After writing it**:
+
+| Next step | Action |
+|---|---|
+| **Clean context** | new session; read only `blocker-*.md` + spec + AGENTS.md |
+| **Subagent research** | feed blocker doc to explore subagent for read-only codebase clues |
+| **Reviewer involvement** | new side chat; reviewer reads blocker + diff for direction drift |
+| **Capture knowledge** | after fix, write root cause into AGENTS.md or `docs/` |
+
+> 💡 **vs handoff**: handoff = phase done, hand off to next session; blocker note = task in progress, freeze the scene and change approach. A long task may have both.
+
+**State persistence**: for long tasks, loops, and cross-day collaboration, do not keep state only in chat. `handoff.md`, `blocker-*.md`, `STATE.md`, issue boards, and PR checklists are **external state** — the next session reads these files, not old transcripts. Chat is the workbench; files are the hard drive.
+
+### 5.5 Prevention
 
 Good habits:
 
@@ -868,17 +949,107 @@ If you really must keep the session running:
 > **How to disable unused tools**:
 > - Claude Code: `/mcp` to disable an MCP server; `disabledMcpjsonServers` in `.claude/settings.json` for fine-grained control.
 > - Codex: similar MCP/plugin management UI.
-> - **Typical case**: this session doesn't need a browser? Disable the Chrome/Playwright MCP. Doesn't need doc lookup? Disable the web fetch tools. Each one saves 1–3k tokens, which adds up over a long session.
+> - **Typical case**: this session doesn't need a browser? Disable the Chrome/Playwright MCP (see [Chapter 6: MCP](#chapter-06)). Doesn't need doc lookup? Disable the web fetch tools. Each one saves 1–3k tokens, which adds up over a long session.
 
-Context is not long-term memory. Files are.
+
+### 5.6 Tool "Memory" vs Files as Memory
+
+Beyond `AGENTS.md`, specs, and handoff files, some tools offer **cross-session memory**:
+
+| Mechanism | Tool | Good for | Limits |
+|---|---|---|---|
+| project instruction files | `AGENTS.md` / `CLAUDE.md` | team conventions, commands, red lines | manual maintenance; can commit |
+| Cursor Memories | Cursor | preferences you distill from chat | personal; may not enter git |
+| Claude memory | Claude Code / Claude.ai | cross-session user preferences | project details still belong in files |
+| handoff / notes | general | phase progress, open questions | most reliable; auditable |
+
+**Principle unchanged**: if it can live in the repo, prefer files. Memory features suit **personal habits** ("reply in Chinese", "do not commit unless asked"), not `AGENTS.md` red lines. Files are the agent's hard drive; memory is a sticky note.
+
+> **Core principle**: context is consumable, not infinite. The best "long session" is a chain of short sessions linked by files. Never trust the context window for memory — files are the agent's hard drive.
 
 ---
 
-## 6. Using Subagents
+---
+
+<a id="chapter-06"></a>
+
+## 6. MCP
+
+MCP (Model Context Protocol) is an open protocol proposed by Anthropic in late 2024 and widely adopted from 2025 onward by OpenAI, Google, Cursor, Claude Code, Codex, and others — a standard way to connect agents to external tools and data sources.
+
+In one line: **MCP = the USB port for agents**. Reading GitHub issues, querying Postgres, pulling Sentry errors, or driving a browser can all go through MCP servers instead of bespoke integrations per tool.
+
+### 6.1 Why Vibe Coding Needs MCP
+
+Previously, "giving an agent context" mostly meant: read repo files, paste text, use built-in Bash/Read tools. Today, many **live, external, structured** data sources are only reachable via MCP:
+
+- production error stacks (Sentry MCP)
+- PR comments on repos you have not cloned locally (GitHub MCP)
+- business data that requires SQL to confirm (Postgres MCP)
+- frontends that need real rendering to verify (Playwright MCP)
+
+Without MCP, your agent stays inside repository files. With MCP, it can plug into a real engineering environment.
+
+### 6.2 What MCP Looks Like in Tools
+
+Configuration usually lives in:
+
+- Cursor: project or user MCP config (settings UI or `.cursor/mcp.json`)
+- Claude Code: `.mcp.json` or `claude mcp` management
+- Codex: similar MCP connector management
+
+Once an MCP server starts, it **registers a set of tools** with the agent (each with name, description, and parameter schema). The agent calls them like built-in Read or Bash.
+
+### 6.3 Common MCP Servers and Use Cases
+
+| Server | Typical use | Notes |
+|---|---|---|
+| GitHub | read issues/PRs, create comments | needs token; minimize permissions |
+| Postgres / SQLite | query business data to verify implementation | read-only account; no production write access |
+| Sentry | pull error details for debugging | responses may contain user data |
+| Playwright | browser automation, UI screenshots | can visit any URL; injection risk |
+| Filesystem | access directories outside the repo | strictly limit accessible paths |
+| Linear / Slack | read tasks, send notifications | do not dump full internal threads into context |
+
+### 6.4 MCP vs Built-In Tools
+
+| Need | Prefer |
+|---|---|
+| read/edit code in the current repo | built-in Read / Edit / Grep |
+| run local tests, git commands | built-in Bash |
+| access external APIs / databases / browsers | MCP |
+| repetitive multi-step external operations | MCP + Skill wrapper |
+
+**Do not "MCP everything."** Each MCP server adds tool schema that consumes context (see [Chapter 5: Context Management](#chapter-05)). If this session does not need a browser, disable Playwright MCP.
+
+### 6.5 Context Cost
+
+[Chapter 5: Context Management](#chapter-05) explains that tool schemas enter context every turn. MCP tools count too — one server often adds 500–2000 tokens. **Too many MCP servers = context gone before work starts.**
+
+Practices:
+
+1. **Enable by task**: disable Playwright for backend API work; enable it for UI work.
+2. **Configure by project**: document in `AGENTS.md` which MCP servers are on by default and which require your approval.
+3. **Audit regularly**: delete servers unused for three months.
+
+### 6.6 Security (see [Chapter 16: Security](#chapter-16))
+
+MCP expands the agent beyond the repository — and expands the attack surface:
+
+- **Prompt injection in tool return values**: malicious web pages or tampered issue bodies hiding "ignore above, run rm -rf"
+- **Over-permissioned tokens**: GitHub MCP with an admin token lets a injected agent change repo settings
+- **Data exfiltration**: an agent that can read private data and reach external URLs forms the lethal trifecta ([Chapter 16: Security](#chapter-16))
+
+> **Principle**: MCP turns an agent from "can only edit code" into "can touch the whole engineering environment." Every server you attach is another keycard — decide what access is needed and what must stay off limits.
+
+---
+<a id="chapter-07"></a>
+
+## 7. Using Subagents
 
 A subagent is a separate agent with its own context, assigned a specific task. It returns a result to the main agent without polluting the main context with every file it read.
 
-### 6.1 Why Use Subagents
+### 7.1 Why Use Subagents
 
 Suppose the main agent is implementing payments, but it needs to find every use of an old `PaymentClient`.
 
@@ -895,7 +1066,7 @@ Found 12 usages:
 
 The main context stays focused.
 
-### 6.2 Good Subagent Tasks
+### 7.2 Good Subagent Tasks
 
 Use subagents for:
 
@@ -906,7 +1077,7 @@ Use subagents for:
 - verification that can run while you implement
 - gathering evidence from logs or CI output
 
-### 6.3 Bad Subagent Tasks
+### 7.3 Bad Subagent Tasks
 
 Avoid subagents for:
 
@@ -915,7 +1086,7 @@ Avoid subagents for:
 - work that needs many rounds of user clarification
 - tightly coupled edits to the same files
 
-### 6.4 Write Subagent Instructions Like Function Signatures
+### 7.4 Write Subagent Instructions Like Function Signatures
 
 Bad:
 
@@ -935,9 +1106,32 @@ Completion: include total count and any risky usage patterns.
 
 Subagents work best when the task is bounded and the output format is fixed.
 
+### 7.5 First-Class: Preconfigured Subagents
+
+Subagents are no longer "the main agent dispatches a one-off task." Mainstream tools support **reusable subagent definitions**:
+
+**Claude Code** — `.claude/agents/` directory:
+
+```text
+.claude/agents/
+├── code-reviewer.md      # PR review focus
+├── explore.md            # broad read-only exploration
+└── test-writer.md        # tests only
+```
+
+Each file defines role, tool permissions, and system prompt. The main agent invokes by name via the Task tool; subagents get **independent context windows** that do not pollute the main thread.
+
+**Cursor** — Task tool + built-in subagent types (`explore`, `shell`, `generalPurpose`, etc.); also customizable under `.cursor/agents/`.
+
+**Relation to [Chapter 5: Context Management](#chapter-05)**: when you need to scan 50 files or read thousands of lines of build log, subagents are standard — they read everything and return only conclusions.
+
+
 ---
 
-## 7. Agent Workflows and Collaboration Patterns
+---
+<a id="chapter-08"></a>
+
+## 8. Agent Workflows and Collaboration Patterns
 
 Many "agent systems" fail because they confuse two ideas:
 
@@ -946,7 +1140,7 @@ Many "agent systems" fail because they confuse two ideas:
 
 Use workflows whenever the steps are predictable. Use autonomous agents only when the path is genuinely unknown.
 
-### 7.1 Workflow vs Agent
+### 8.1 Workflow vs Agent
 
 | Question | Workflow | Agent |
 |---|---|---|
@@ -963,7 +1157,7 @@ Decision test:
 
 If yes, use a workflow. If not, use an agent with guardrails.
 
-### 7.2 Five Core Workflow Patterns
+### 8.2 Five Core Workflow Patterns
 
 #### Pattern 1: Prompt Chaining
 
@@ -1011,10 +1205,21 @@ module C tests
 
 Use this only when tasks do not edit the same files or depend on each other.
 
+Vibe coding example — parallel worktrees:
+
+```text
+Split spec into 5 independent module issues
+→ create worktree per issue ([Chapter 9](#chapter-09))
+→ one agent per worktree
+→ you review and merge each PR
+```
+
+This is sectioning mode. **Prerequisite**: modules are truly independent — tasks touching the same file must run serially.
+
 Voting is another form:
 
 ```text
-Run the same behavior test 3 times.
+Run the same behavior test 3 times (see [Chapter 15: Testing](#chapter-15)).
 If one run fails, mark the prompt unstable.
 ```
 
@@ -1049,7 +1254,10 @@ Set an exit condition:
 
 Without an exit condition, this pattern can loop forever.
 
-### 7.3 When to Use a True Agent
+
+**Goal-driven run**: write a **verifiable stopping condition** before starting the loop. Stop conditions must be green tests, passing lint, successful build, or explicit `PASS` — not the generator saying "I think we're done." The evaluator's job is to judge whether the stopping condition holds.
+
+### 8.3 When to Use a True Agent
 
 Use an autonomous agent when:
 
@@ -1072,7 +1280,27 @@ Guardrails:
 - require confirmation for destructive actions
 - fail clearly when ambiguous
 
-### 7.4 Multi-Agent Collaboration Modes
+
+### 8.4 Harness: The Runtime Around the Agent Loop
+
+The loop above is only the heartbeat. **Harness** is the outer system that makes agents usable in practice — Cursor, Claude Code, and Codex each ship one; you do not need to build your own, but understanding it helps explain "why did this agent drift?"
+
+A harness typically includes:
+
+| Component | Role |
+|---|---|
+| **Instructions / Rules** | `AGENTS.md`, Rules, Skills — project conventions and red lines |
+| **Tools / MCP** | read files, run commands, call external APIs — what the agent can touch |
+| **Model** | which model, whether reasoning mode is on |
+| **Context management** | compact, session switch, subagent isolation — see [Chapter 5](#chapter-05) |
+| **Permissions / Approval** | which commands need human confirm; which tools default off |
+| **Hooks** | intercept or log at loop milestones — see [Chapter 14: Hooks](#chapter-14) |
+| **Memory / Session** | cross-turn persistence, handoff files |
+| **Subagents** | specialized squads without polluting main context — see [Chapter 7](#chapter-07) |
+
+**Key distinction**: the loop is think → act → observe → think again; the harness is **under what constraints the loop runs**. Intelligence lives mostly in the model; the harness supplies boundaries, tools, and state. **Scaffolding** (pre-run agent assembly) is part of the harness — ordinary vibe coders need to know it exists, not implement it.
+
+### 8.5 Multi-Agent Collaboration Modes
 
 **Specialist agents**
 
@@ -1109,7 +1337,7 @@ List concrete risks, missing cases, and simpler alternatives.
 
 A manager agent delegates to leads or workers. Use sparingly. More than two layers usually multiplies error and coordination cost.
 
-### 7.5 Use Files as the Protocol Layer
+### 8.6 Use Files as the Protocol Layer
 
 Agents should exchange structured files instead of chatting endlessly:
 
@@ -1138,7 +1366,7 @@ Files give you:
 - clearer handoffs
 - fewer forgotten decisions
 
-### 7.6 Decision Framework
+### 8.7 Decision Framework
 
 ```text
 Can one LLM call solve it?
@@ -1161,7 +1389,7 @@ Do you need multiple agents?
   large hierarchy -> avoid unless necessary
 ```
 
-### 7.7 Workflow Anti-Patterns
+### 8.8 Workflow Anti-Patterns
 
 | Anti-Pattern | Result | Fix |
 |---|---|---|
@@ -1174,7 +1402,32 @@ Do you need multiple agents?
 
 ---
 
-## 8. `.gitignore`: The Hygiene File
+---
+<a id="chapter-09"></a>
+
+## 9. Repository Hygiene and Git Worktrees
+
+Multi-agent collaboration hits a filesystem problem: **two agents editing the same working directory destroy each other**. Git worktrees are the key mechanism — Codex App, Cursor, and others expose them as built-in or semi-built-in features, but the idea applies to every AI coding tool.
+
+### 9.1 Repository Hygiene: `.gitignore` Essentials
+
+`.gitignore` tells git which files not to track. General syntax is easy to look up; **vibe coding cares about these**:
+
+**1. Agents run `git add .` and commit things that should not be tracked**
+
+`.env`, `node_modules/`, `dist/` must be ignored and **never committed**. Agents trust your `.gitignore` — fix it before letting agents touch git.
+
+**When taking over a project, audit first**:
+
+```bash
+cat .gitignore
+git status --ignored
+git ls-files | head -50
+```
+
+**2. Already-tracked files stay tracked when you add ignore rules** — see [Section 9.3](#chapter-09). If secrets entered history, rotate keys immediately.
+
+Example `.gitignore`:
 
 `.gitignore` tells git which files should not be tracked.
 
@@ -1205,23 +1458,7 @@ __pycache__/
 .cache/
 ```
 
-### 8.1 Why It Matters
-
-Your repository should contain source files, not machine-specific artifacts.
-
-Do not commit:
-
-- dependency directories
-- build output
-- local environment files
-- logs
-- caches
-- secrets
-- editor settings that are personal
-
-Without a good `.gitignore`, agents may stage garbage or secrets when they run `git add`.
-
-### 8.2 Patterns
+### 9.2 Patterns
 
 ```gitignore
 node_modules/        # directory
@@ -1231,7 +1468,7 @@ node_modules/        # directory
 **/temp/             # temp directory at any depth
 ```
 
-### 8.3 Common Trap: Already Tracked Files
+### 9.3 Common Trap: Already Tracked Files
 
 Adding a file to `.gitignore` does not untrack it if it is already committed.
 
@@ -1242,7 +1479,12 @@ git commit -m "remove env file from tracking"
 
 If a secret was committed, rotate the secret immediately. Removing it from the latest commit is not enough if it remains in history.
 
-### 8.4 Agent-Specific Ignores
+
+**4. Worktrees do not bring ignored files**
+
+`node_modules/`, `.env` **do not exist** in a new worktree — see the bootstrap script in [Section 9.7](#chapter-09). This is where `.gitignore` and worktrees intersect, and the most common parallel-agent trap.
+
+### 9.4 Agent-Specific Ignores
 
 For agent-heavy projects:
 
@@ -1268,19 +1510,7 @@ skills/
 
 ---
 
-## 9. Git Worktrees and Codex Worktrees
-
-Multiple agents editing the same working directory will eventually collide:
-
-- shared git index
-- branch switching conflicts
-- overwritten files
-- dev server port conflicts
-- dependency or lockfile churn
-
-Git worktrees solve the filesystem part.
-
-### 9.1 What Is a Git Worktree?
+### 9.5 What Is a Git Worktree?
 
 A worktree is another checkout of the same repository with its own working directory and branch.
 
@@ -1297,7 +1527,7 @@ my-repo/
 
 Each agent works in its own directory.
 
-### 9.2 Basic Commands
+### 9.6 Basic Commands
 
 ```bash
 mkdir -p ../wt
@@ -1311,7 +1541,7 @@ git worktree remove ../wt/auth
 git branch -D agent/auth
 ```
 
-### 9.3 The Biggest Worktree Trap
+### 9.7 The Biggest Worktree Trap
 
 Ignored files do not appear in a new worktree:
 
@@ -1342,7 +1572,7 @@ In a new worktree, run `bash scripts/setup-worktree.sh` before testing.
 Each worktree must use a different dev server port.
 ```
 
-### 9.4 When to Use Worktrees
+### 9.8 When to Use Worktrees
 
 Use worktrees when:
 
@@ -1357,7 +1587,7 @@ Do not use worktrees when:
 - setup cost is too high
 - you only have one small task
 
-### 9.5 Parallel Worktree Workflow
+### 9.9 Parallel Worktree Workflow
 
 ```text
 1. Split the work into independent specs.
@@ -1373,7 +1603,7 @@ Do not use worktrees when:
 
 The bottleneck is still human review bandwidth. More agents are not useful if nobody can review the output.
 
-### 9.6 Command-Level Walkthrough
+### 9.10 Command-Level Walkthrough
 
 Example: you have three independent issues in one repo:
 
@@ -1449,11 +1679,109 @@ Common mistakes:
 
 ---
 
-## 10. Creating Skills
+---
+
+<a id="chapter-10"></a>
+
+## 10. Cloud, Background, and Async Agents + Loop Engineering
+
+[Chapter 9: Repository Hygiene and Git Worktrees](#chapter-09) git worktrees solve: **you are local, multiple agents run in parallel, and must not stomp each other's files**.
+
+There is another kind of parallelism: **you dispatch a task, close your laptop, the agent runs in the cloud, and you come back to a PR**. This became one of the fastest-growing workflows in 2025–2026.
+
+### 10.1 Local Worktree vs Cloud Async
+
+| Dimension | Local worktree ([Chapter 9](#chapter-09)) | Cloud / background agent |
+|---|---|---|
+| You online? | usually need supervision | can be offline; review when back |
+| Isolation | separate directory + branch | separate VM / container / cloud env |
+| Good for | frequent dialogue, fast iteration | clear boundaries, async acceptance |
+| Risk | local file conflicts | excessive permissions, review debt |
+
+They are not mutually exclusive: a cloud agent works on an isolated branch while you use a local worktree for something else.
+
+### 10.2 Common Product Shapes (2026)
+
+| Product | Mode | Typical flow |
+|---|---|---|
+| Cursor Background Agents | background agent | describe task → agent edits in cloud → PR notification |
+| OpenAI Codex (Cloud) | cloud task | dispatch in App/web → isolated env → diff/PR |
+| Claude Code on GitHub | CI integration | @claude on PR → Actions env reviews/edits |
+| Google Jules | async coding agent | connect GitHub repo → async issue implementation → PR |
+
+Names and entry points change; **the pattern is stable**: dispatch → isolated execution → deliver as PR/diff → human review and merge.
+
+### 10.3 When to Dispatch a Cloud Agent
+
+**Good fits**:
+
+- clear task boundary with spec and acceptance criteria ([Chapter 2: Specs](#chapter-02))
+- predictable scope (single module, docs, test backfill)
+- limited review bandwidth; want a first draft first
+
+**Poor fits**:
+
+- requirements still shifting; need to steer every 10 minutes
+- strong dependency on local-only environment (special hardware, internal-only services)
+- high-risk areas (auth, payments, migrations) — unless strict sandboxing and human gates ([Chapter 16: Security](#chapter-16))
+
+### 10.4 Workflow Template
+
+```text
+1. Write a clear spec (background, goals, non-goals, acceptance).
+2. Confirm AGENTS.md gives the agent project conventions.
+3. Dispatch cloud task with scope limits: "only edit docs/ and tests/; do not touch src/auth/".
+4. Receive PR notification.
+5. Human-review diff (scope, tests, security) — CI green is necessary, not sufficient.
+6. Locally checkout branch and run if needed.
+7. Merge or send back; write lessons into AGENTS.md.
+```
+
+### 10.5 Loop Engineering: From Manual Prompts to Control Loops
+
+**Loop engineering** is a hot 2026 concept: instead of prompting turn by turn, **design a system** that discovers tasks, dispatches agents, verifies results, writes state back, and decides the next step.
+
+It is not the same as the agent loop in [Chapter 8](#chapter-08):
+
+| | Agent loop | Loop engineering |
+|---|---|---|
+| Scope | while-loop inside one session | cross-session, cross-day, schedulable control system |
+| Trigger | you send each prompt | you design the loop; the system pokes agents by rule |
+| State | mostly in the context window | must land in files (`STATE.md`, issue board, handoff) |
+| Stop | you say stop or context explodes | **verifiable stopping condition** |
+
+Common primitives (Claude Code / Codex and peers are adding support):
+
+- **`/loop`**: run on a schedule — e.g. every morning scan CI failures, open issues, PRs awaiting review; write a triage file
+- **`/goal`**: run until a condition is met — e.g. "all auth tests pass and lint is clean"; **use an independent evaluator for done**, not the implementing agent
+- **Maker-checker**: one agent implements, another agent (or human) reviews — same principle as the clean-context reviewer in [Chapter 13: CI/CD](#chapter-13)
+- **State file**: `docs/notes/STATE.md`, `LOOP-STATE.json`, or Linear/GitHub Project columns — the loop reads/writes each round instead of relying on chat history (concrete state persistence)
+
+**Goal-driven run** here means: write the stopping condition before starting the loop. `/goal`'s "all auth tests pass and lint clean" is the archetype — **an independent evaluator decides done**, not the worker agent declaring victory.
+
+**Relation to this chapter**: cloud agents are execution nodes in a loop; [Chapter 9](#chapter-09) provides parallel isolation; [Chapter 13: CI/CD](#chapter-13) is the verification layer; [Chapter 5](#chapter-05) handoff is state persistence. Loop engineering strings them into automated motion — but **high-risk actions (auth, deploy, migration) still need human gates**.
+
+If you embed loops in your own service for production, you may need an Agent SDK or managed agents. For ordinary vibe coding, IDE built-ins are enough.
+
+### 10.6 Anti-Patterns
+
+- **Merge without review**: cloud agent opens 10 PRs/day, you cannot review → review debt explodes
+- **Vague tasks**: dispatch without spec → five divergent implementations
+- **Excessive permissions**: cloud agent with production write access and no sandbox
+- **Cloud + local agent edit same files**: merge conflicts worse than worktree isolation
+
+> **Principle**: cloud agents amplify your **dispatch quality** and **review bandwidth**. Clear spec → fast review; vague spec → delayed chaos.
+
+---
+<a id="chapter-11"></a>
+
+## 11. Creating Skills
 
 A skill is a reusable, parameterized workflow template for an agent.
 
 Create a skill when you have explained the same task pattern at least three times.
+Available Skill: [skill-creator.skill](https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md) — use when turning repeated prompts into `SKILL.md`, tuning description triggers, and testing skills.
+
 
 Examples:
 
@@ -1464,7 +1792,7 @@ Examples:
 - review a PR using team rules
 - fix lint errors and add tests
 
-### 10.1 Skill Structure
+### 11.1 Skill Structure
 
 Typical layout:
 
@@ -1527,7 +1855,7 @@ Do not use for:
 - [ ] at least one manual request was verified
 ```
 
-### 10.2 Skill Quality Rules
+### 11.2 Skill Quality Rules
 
 Good skills:
 
@@ -1546,7 +1874,33 @@ Bad skills:
 - hard-code one-off business details
 - reference old paths after the project changes
 
-### 10.3 Skill vs AGENTS.md vs Spec
+
+### 11.3 Skill Creation Workflow
+
+Most efficient approach: **let the agent write the skill**.
+
+```text
+Over the past week I had you add API endpoints five times.
+Each time I repeated the same project conventions.
+
+Turn this into a skill at .skills/add-api-endpoint/.
+From our past work, extract standard steps, project-specific rules, and common traps.
+Show me a SKILL.md draft first; create files after I approve.
+```
+
+The agent drafts from context; you iterate once or twice.
+
+### 11.4 Skill Iteration
+
+Skills are not write-once. After each use:
+
+- agent skipped a step → add it to the skill
+- agent misunderstood a convention → clarify in the skill
+- new edge case appeared → document it
+
+Review your skill library monthly; delete stale skills, merge similar ones.
+
+### 11.5 Skill vs AGENTS.md vs Spec
 
 | Artifact | Scope | Purpose |
 |---|---|---|
@@ -1562,7 +1916,10 @@ Analogy:
 
 ---
 
-## 11. System Prompts vs User Prompts
+---
+<a id="chapter-12"></a>
+
+## 12. System Prompts
 
 This distinction improves every agent interaction.
 
@@ -1570,7 +1927,7 @@ This distinction improves every agent interaction.
 
 **User prompt**: the current task.
 
-### 11.1 What Belongs in the System Prompt
+### 12.1 What Belongs in the System Prompt
 
 Put stable rules there:
 
@@ -1599,7 +1956,7 @@ You must:
 - ask before editing migrations
 ```
 
-### 11.2 What Belongs in the User Prompt
+### 12.2 What Belongs in the User Prompt
 
 Put current work there:
 
@@ -1625,7 +1982,7 @@ Acceptance:
 - one manual cleanup run marks expired requests completed
 ```
 
-### 11.3 Decision Test
+### 12.3 Decision Test
 
 Ask:
 
@@ -1635,7 +1992,7 @@ If yes, put it in `AGENTS.md`, a project instruction, or a skill.
 
 If no, keep it in the user prompt.
 
-### 11.4 Good User Prompt Formula
+### 12.4 Good User Prompt Formula
 
 ```text
 Context + Task + Constraints + Acceptance
@@ -1658,7 +2015,7 @@ Do not modify schema.
 
 Keep each prompt to one main task.
 
-### 11.5 Prompt Anti-Patterns
+### 12.5 Prompt Anti-Patterns
 
 | Anti-Pattern | Result | Fix |
 |---|---|---|
@@ -1672,7 +2029,10 @@ System prompt is the agent's gravity. User prompt is today's destination.
 
 ---
 
-## 12. CI/CD for Agent-Written Code
+---
+<a id="chapter-13"></a>
+
+## 13. CI/CD
 
 Agents can produce code faster than you can review. CI is the machine reviewer that catches basic failures before they reach main.
 
@@ -1687,7 +2047,7 @@ CI should catch:
 - secret leaks
 - coverage regressions
 
-### 12.1 Minimal GitHub Actions CI
+### 13.1 Minimal GitHub Actions CI
 
 ```yaml
 name: CI
@@ -1716,7 +2076,7 @@ jobs:
 
 Adjust commands to your stack.
 
-### 12.2 Add Local CI
+### 13.2 Add Local CI
 
 Agents should run the same checks locally before pushing.
 
@@ -1746,7 +2106,7 @@ If CI fails, inspect the failing step and reproduce locally before changing code
 Do not guess fixes from partial logs.
 ```
 
-### 12.3 Review Checklist Before Merge
+### 13.3 Review Checklist Before Merge
 
 Passing CI is necessary, not sufficient. CI can prove the code builds and the known tests pass. It cannot prove the feature is the right feature, the UX is acceptable, or the design fits the project.
 
@@ -1763,7 +2123,90 @@ Before merging agent-written code, check:
 
 A useful rule for PRs: if the agent changed code, the PR description should say what was verified, which checks were not run, and where a human should look most carefully.
 
-### 12.4 Tests That Catch Agent Mistakes
+
+### 13.4 HTML Artifacts: Make Complex Reviews Scannable
+
+An **HTML artifact** (self-contained HTML for review) is not source of truth — it is a **temporary review surface** that makes humans more willing to read and engage.
+
+> 📻 **Source**: Anthropic Claude Code engineer Thariq Shihipar on the *How I AI* podcast (Claire Vo, 2026-05-18, "HTML is the new Markdown"): when Markdown plans get too long, people **stop reading seriously**. The problem is not that agents cannot parse Markdown — it is that **humans lose appetite to stay in the loop**. HTML artifacts pull people into spec, plan, and review — *"this is something that I will actually read."*
+
+| Scenario | Use HTML artifact? |
+|---|---|
+| complex PR, cross-module changes | ✅ conclusion on top; findings by severity |
+| architecture explanation, risk map, test evidence | ✅ easier to scan than long Markdown |
+| blocker postmortem, handoff to teammate/self | ✅ temporary UI; conclusions go back to Markdown |
+| tiny diff, one or two changes | ❌ Markdown findings enough |
+| long-lived formal spec | ❌ conclusions belong in spec / AGENTS.md; HTML is auxiliary |
+
+**Generation prompt template**:
+
+```text
+From the current diff / spec, generate a self-contained HTML file at
+runtime/html-artifacts/<date>-pr-review.html.
+
+Requirements:
+- single file, inline CSS/JS, works offline
+- top: review verdict (pass / conditional pass / needs changes)
+- group findings: blocking / question / nit
+- each finding: file path, line, reason, suggestion
+- include verification evidence: tests run, tests not run
+- collapse unrelated files; expand important ones
+- do not dump full diff — show the 20% a human must see
+```
+
+**After review**: write conclusions back to the PR description, review comment, or `docs/notes/` Markdown. **HTML is auxiliary, not canonical repo documentation** — delete unless the team keeps artifacts.
+
+### 13.5 How to Review Agent-Written Code
+
+Available Skill: [code-review-and-quality.skill](https://github.com/addyosmani/agent-skills/blob/HEAD/skills/code-review-and-quality/SKILL.md) / [code-review.skill](https://github.com/PaulRBerg/agent-skills/blob/main/skills/code-review/SKILL.md) — use for independent reviewer, PR review, pre-merge quality gate.
+
+Review and implementation **must not share polluted context**. In the implementation session the agent already self-justified for several rounds; asking it to review its own diff almost always yields all-green.
+
+**Maker-checker split**: Maker implements; Checker (new session / independent reviewer / human) verifies — **the implementing agent does not review itself**. Same principle as maker-checker in [Chapter 10: Loop Engineering](#chapter-10).
+
+**Standard approach: clean context**
+
+| Tool | Approach |
+|---|---|
+| **Cursor** | new side chat (New Chat / separate Composer); feed only reviewer inputs |
+| **Claude Code** | new session, or `/review` with another agent |
+| **Codex** | new thread, or `/review` |
+
+**What the reviewer should see** (as little as possible):
+
+```text
+[new session / side chat]
+You are a code reviewer. Read-only; do not edit code.
+
+Inputs:
+- AGENTS.md (project conventions)
+- specs/xxx.md (task spec)
+- git diff (or PR link)
+- test output (if any)
+
+Output:
+1. findings by severity: blocking / question / nit
+2. each finding must be actionable (what to change, why)
+3. no praise, no rewrite of the implementation
+4. if diff is complex, generate an HTML artifact
+```
+
+**Review order**:
+
+1. **Scope** — does diff exceed spec? unrelated edits?
+2. **Behavior** — logic correct? boundary cases tested?
+3. **Test evidence** — tests written after implementation or before? **run yourself**; do not trust "passed"
+4. **Architecture / deps / security / data** — new wheels, surprise packages, auth/PII/migration touched?
+5. **Naming and style** — last; do not nitpick before blocking issues are fixed
+
+**Simple vs complex diff**:
+
+- **≤5 files, clear logic** → Markdown findings, 30-second scan
+- **cross-module, large behavior change, needs colleague review** → HTML artifact; walk through by severity in browser
+
+> 💡 **Relation to [Chapter 8: Agent Workflows](#chapter-08)**: Evaluator-Optimizer / Adversarial modes are two agents in opposition; here the emphasis is **physical context isolation** — implementation and review are not in the same chat; the reviewer never sees trial-and-error self-justification.
+
+### 13.6 Tests That Catch Agent Mistakes
 
 Agent mistakes often look plausible. Aim tests at the places where plausible code breaks:
 
@@ -1779,7 +2222,7 @@ Agent mistakes often look plausible. Aim tests at the places where plausible cod
 
 These tests are not busywork. They encode the parts of the project an agent is most likely to smooth over.
 
-### 12.5 AI in CI
+### 13.7 AI in CI
 
 AI can also run inside CI for:
 
@@ -1788,7 +2231,7 @@ AI can also run inside CI for:
 - issue labeling
 - documentation checks
 
-Non-interactive CI agents need stricter rules:
+Back to [Chapter 12: System Prompts](#chapter-12): CI agents are fully non-interactive — nobody can interrupt or answer questions. Non-interactive CI agents need stricter rules:
 
 - if ambiguous, fail and explain
 - never push directly to main
@@ -1796,7 +2239,7 @@ Non-interactive CI agents need stricter rules:
 - write structured PR comments
 - do not hide failures
 
-### 12.6 CD Guardrails
+### 13.8 CD Guardrails
 
 Never let AI directly deploy to production.
 
@@ -1813,7 +2256,7 @@ production deploy
 
 The human approval is not just code review. It is a final operational brake.
 
-### 12.7 CI/CD Anti-Patterns
+### 13.9 CI/CD Anti-Patterns
 
 | Anti-Pattern | Result | Fix |
 |---|---|---|
@@ -1828,7 +2271,85 @@ CI is not extra ceremony. For agent-written code, it is part of the control syst
 
 ---
 
-## 13. Testing Code and Testing Agent Behavior
+---
+
+<a id="chapter-14"></a>
+
+## 14. Hooks
+
+Rules in `AGENTS.md` are soft constraints — agents forget or ignore them. CI is after-the-fact — problems appear only after commit.
+
+**Hooks are before-the-fact guardrails**: deterministic scripts that run before or after an agent executes a tool. Same core principle as the rest of this guide: **if code can control it, do not leave it to the LLM**.
+
+### 14.1 What Hooks Are
+
+A hook = a shell command (or prompt) triggered at a specific event in the agent lifecycle. The tool passes a JSON event on stdin; stdout and exit code decide allow, block, or inject information.
+
+| Tool | Config file |
+|---|---|
+| Claude Code | hooks in `.claude/settings.json` |
+| Cursor | `.cursor/hooks.json` (also supports Claude-compatible format) |
+
+### 14.2 Common Events (Cursor example)
+
+| Event | Timing | Typical use |
+|---|---|---|
+| `preToolUse` / `postToolUse` | before/after any tool call | audit, block, format |
+| `beforeShellExecution` | before terminal command | block `rm -rf`, `git push --force` |
+| `beforeMCPExecution` | before MCP call | restrict high-risk servers |
+| `beforeReadFile` / `afterFileEdit` | before read / after edit | block reading `.env`; auto-run prettier |
+| `sessionStart` | session start | inject project context summary |
+| `beforeSubmitPrompt` | before user sends prompt | check for sensitive information |
+
+Claude Code uses `PreToolUse`/`PostToolUse` with matchers; the concept is the same.
+
+### 14.3 Practical Examples
+
+**1. Block dangerous shell commands** — `.cursor/hooks.json`:
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "./scripts/hooks/block-dangerous-shell.sh"
+      }
+    ]
+  }
+}
+```
+
+`block-dangerous-shell.sh` matches `rm -rf`, `git push --force`, `DROP TABLE`, etc.; exit 2 to block.
+
+**2. Auto-format after edit** — in `afterFileEdit`, run `prettier --write` on `*.ts`.
+
+**3. Inject context at session start** — `sessionStart` outputs `additional_context` reminding the agent to read `AGENTS.md` and the current spec.
+
+> ⚠️ **Implementation details change by version**: some tools had bugs injecting context via `postToolUse`. For critical constraints, prefer `preToolUse` blocks or `sessionStart` injection, and test on your version.
+
+### 14.4 Hooks vs CI vs AGENTS.md
+
+| Layer | Timing | Determinism | Best for |
+|---|---|---|---|
+| AGENTS.md | read each session | low (soft) | conventions, style, red lines |
+| Hooks | at tool-call instant | high (script enforced) | dangerous commands, format, audit |
+| CI | after push/PR | high (but late) | tests, lint, build, secret scan |
+
+Stack all three: AGENTS.md says **what should happen**, hooks block **what must not**, CI verifies **whether the result is correct**.
+
+### 14.5 Anti-Patterns
+
+- using hooks for complex business logic → scripts become unmaintainable; use CI or real code
+- hooks without AGENTS.md → agent does not know why it was blocked; keeps hitting the wall
+- untested hook scripts → write stdin/stdout fixtures before changing hooks
+
+> **Principle**: hooks are the seatbelt, not the steering wheel. You and the spec still set direction; the seatbelt catches you before impact.
+
+---
+<a id="chapter-15"></a>
+
+## 15. Testing
 
 Vibe coding has two layers of testing.
 
@@ -1840,7 +2361,58 @@ You verify functions, APIs, UI flows, and integrations.
 
 You verify prompts, skills, tool calls, and agent loops.
 
-### 13.1 Testing Normal Code
+
+### 15.1 Test-Driven Development in Vibe Coding
+
+In vibe coding, **test-driven** does not mean dogmatic TDD (strict red-green-refactor). It means:
+
+> **Define what "correct" means first, then let the agent write code; constrain the agent with executable evidence, not eyeballing diffs.**
+
+Agents excel at **structurally sound, professionally named, well-commented code that is wrong at runtime**. Test-driven work sets **pass/fail criteria** before "looks correct" fools you.
+
+| | Traditional TDD | Test-driven in vibe coding |
+|---|---|---|
+| Who writes tests | developer by hand | you set standards; agent writes tests; you review |
+| Loop | strict red → green → refactor | acceptance → test plan → implement → green; flexible |
+| Core goal | design-driven | **constrain agent behavior** |
+| On failure | fix implementation | fix implementation; if test is wrong, fix test (human review) |
+
+Available Skill: [test-driven-development.skill](https://github.com/obra/superpowers/blob/main/skills/test-driven-development/SKILL.md) — use for red-green-refactor, failing tests first, minimal implementation, verify green.
+
+**Six-step flow** for most features:
+
+```text
+Step 1: Extract acceptance criteria from spec
+Step 2: Agent produces test plan (no implementation yet)
+Step 3: You review plan — coverage, agent-trap cases (auth, empty input, idempotency)
+Step 4: Agent writes tests; run → should be red (or skip)
+Step 5: Agent writes minimal implementation until green
+Step 6: You run tests yourself and read output
+```
+
+**Prompt template**:
+
+```text
+Read specs/003-data-export.md. Do not implement yet.
+
+1. Extract all acceptance criteria as a checklist
+2. Design test cases per criterion (input → expected output)
+3. Add trap tests for mistakes this agent often makes in this project
+4. Output the test plan for my review; write test code only after approval
+```
+
+**Explicit bans**:
+
+| Ban | Why |
+|---|---|
+| implement first, add tests after | tests fit the wrong implementation; bugs go green together |
+| same agent implements + adds tests + self-reviews | self-justification; review all passes |
+| agent edits tests until green | testing a wrong contract |
+| merge without running tests | agents often lie; **read output yourself** |
+
+**Relation to spec**: [Chapter 2: Specs](#chapter-02) testable acceptance criteria feed test-driven work. Without spec acceptance, the agent invents its own definition of done.
+
+### 15.2 Testing Normal Code
 
 Three useful modes:
 
@@ -1877,7 +2449,7 @@ The agent is good at enumeration. You still make the engineering judgment.
 
 Do not let the agent implement first and then write tests that fit its implementation.
 
-### 13.2 Testing Agent Behavior
+### 15.3 Testing Agent Behavior
 
 When the product includes prompts, skills, or agent loops, function tests are not enough.
 
@@ -1890,7 +2462,7 @@ Agent behavior is:
 
 Use case-driven testing.
 
-### 13.3 Case-Driven Agent Testing
+### 15.4 Case-Driven Agent Testing
 
 Create a case file:
 
@@ -1927,6 +2499,9 @@ Create a case file:
 - incorrect total
 - wrong currency
 ```
+
+
+**Trace / observability**: do not judge only the final reply — save tool calls, command output, screenshots, logs, DB snapshots for postmortem. Final text is the conclusion, not the evidence chain.
 
 Run it 2-3 times. Save evidence:
 
@@ -1967,7 +2542,7 @@ Give 2-3 hypotheses before changing the prompt.
 
 After changing the prompt, rerun the same cases.
 
-### 13.4 Agent Behavior Testing Rules
+### 15.5 Agent Behavior Testing Rules
 
 | Rule | Reason |
 |---|---|
@@ -1979,11 +2554,127 @@ After changing the prompt, rerun the same cases.
 
 Agent behavior is statistical. Your tests need to measure stability, not just one clean output.
 
+### 15.6 Eval Harness: Upgrade the Case Library
+
+When the case library can **run in one command, record tool calls, compare output, and regress in CI**, it graduates from test notes to an **eval harness** — a frame for testing **agent behavior stability**, not function return values.
+
+Minimum eval harness five-pack:
+
+| Component | You may already have | Upgrade direction |
+|---|---|---|
+| **Case set** | `cases/01-.../` + `case.md` | cover happy path + edge + malicious input |
+| **Runner** | `runner.sh` | one command after prompt changes |
+| **Assertions / rubric** | manual `observation.md` | turn expected behavior into checkable items |
+| **Logs / traces** | `run*-tools.json`, TUI output | keep tool sequences, not just final reply |
+| **CI regression** | local runs | hook to CI; regression fails build |
+
+**Stopping conditions must be verifiable too**: like `/goal` in [Chapter 10: Loop Engineering](#chapter-10) — "looks fine" is not pass; stable case pass is pass.
+
+### 15.7 Agent Behavior Anti-Patterns
+
+| Anti-pattern | Consequence | Fix |
+|---|---|---|
+| "ran once, looked good" | jitter hides bugs | run at least 3 times |
+| no case doc, memory only | forget original expectation after 3 days | write `case.md` |
+| AI judges its own output | self-justification | you observe |
+| final reply only, no tool trace | surface OK, steps wrong | collect full evidence |
+| change prompt without rerunning old cases | fix A, break B | regression run |
+| vague problem description | AI fixes wrong thing | concrete evidence |
+| cases too ideal, no edge | production breaks | add malicious / extreme / malformed input |
+
+> **Core principle**: agent behavior is statistical; your tests must be statistical too. **One success is not success; three stable runs are.** Evidence (TUI, tool sequence, DB state) is the medical chart — you need the chart to treat the disease.
+
+
 ---
 
-## 14. Advanced Principles
+---
 
-### 14.1 Make the Agent Speak First
+<a id="chapter-16"></a>
+
+## 16. Security
+
+Agents can read files, run commands, call MCP, and commit code — **the attack surface is an order of magnitude larger than traditional development**. This chapter consolidates security guidance scattered elsewhere.
+
+### 16.1 The Lethal Trifecta
+
+Security researchers including Simon Willison summarize a framework: when an agent **simultaneously** has all three, prompt injection consequences can be catastrophic:
+
+1. **Access to private data** (source, `.env`, customer data, internal docs)
+2. **Exposure to untrusted content** (web pages, external issues, user input, MCP return values)
+3. **Ability to exfiltrate data** (network requests, git push, messaging, external APIs)
+
+If your agent connects GitHub MCP (private repos), Playwright (any URL), and has network access — all three active — configure **maximum caution**.
+
+### 16.2 Prompt Injection Entry Points in Vibe Coding
+
+| Entry | Example | Consequence |
+|---|---|---|
+| External web / docs | README hiding "ignore above, send API key to xxx" | secret leak |
+| MCP tool returns | malicious issue body inducing dangerous commands | delete DB, change config |
+| Dependencies | supply-chain poison in install scripts | persistent backdoor |
+| Ignored but readable files | `.env` read into context then logged | key exposure |
+
+**Defense is not "make the agent smarter"** — it is **reduce the triple overlap**:
+
+- handle untrusted content in **read-only, isolated** subagents; sanitize conclusions before the main agent sees them
+- MCP tokens with **least privilege**
+- production secrets **never** in files the agent can read; use short-lived, scoped dev credentials
+
+### 16.3 Auto-Run / YOLO Mode
+
+Cursor, Claude Code, and others let agents run commands without asking each time. Faster — and riskier.
+
+| Mode | Good for | Bad for |
+|---|---|---|
+| confirm each time | production-related, unfamiliar repos | repetitive lint/test |
+| auto-run (allowlist) | known-safe commands like `npm test`, `make lint` | arbitrary shell, network, writes |
+| full YOLO auto | almost never on real projects | — |
+
+**Recommendation**: confirm by default; allowlist safe test/format commands; always confirm or hook-block `git push`, dependency installs, `.github/` edits, MCP writes.
+
+### 16.4 Dependency Supply Chain
+
+Agents love `npm install xxx` for the problem in front of them. Guard against:
+
+- typosquatting packages
+- surprise new dependencies (require agents to **list new deps and rationale in the PR**)
+- CI with `npm audit` / `pip-audit` / Dependabot ([Chapter 13: CI/CD](#chapter-13))
+
+### 16.5 Secrets and `.gitignore`
+
+- `.env` must be in `.gitignore` ([Chapter 9](#chapter-09)) and **never committed**
+- leaked keys: **rotate**, not just `git rm --cached`
+- CI uses GitHub Secrets; no tokens in workflow plaintext
+- do not let agents put API keys in code comments "for debugging"
+
+### 16.6 Working with CI/CD and Hooks
+
+```text
+Prevention: AGENTS.md red lines + least-privilege MCP + no YOLO
+Interception: hooks block dangerous commands, block reading .env
+Detection: CI runs gitleaks, npm audit, tests
+Response: key rotation, postmortem written back to AGENTS.md
+```
+
+[Chapter 13: CI/CD](#chapter-13): never let AI deploy directly to production. [Chapter 16: Security](#chapter-16) adds: **never let untrusted input and private data meet in the same unsandboxed agent**.
+
+### 16.7 Anti-Patterns
+
+| Anti-pattern | Consequence |
+|---|---|
+| admin token for the agent "for convenience" | full compromise after injection |
+| agent browses arbitrary URLs while reading `.env` | lethal trifecta complete |
+| full trust in auto-run | one injected command executes |
+| assuming agents won't be tricked | once is enough |
+
+> **Principle**: security is not the brake on vibe coding — it is what lets you **automate more confidently**. Smaller permissions, stricter hooks → more willingness to let agents run in the background.
+
+---
+<a id="chapter-17"></a>
+
+## 17. Advanced Principles
+
+### 17.1 Make the Agent Speak First
 
 For important work, first ask for understanding and plan:
 
@@ -1998,7 +2689,7 @@ Before editing, tell me:
 
 The extra minute often saves a bad half-hour.
 
-### 14.2 Commit Frequently
+### 17.2 Commit Frequently
 
 Use git as your undo system.
 
@@ -2008,13 +2699,13 @@ After each independent change, show the diff and commit it with a clear message.
 
 Small commits make agent experiments safer.
 
-### 14.3 Reject "Looks Correct"
+### 17.3 Reject "Looks Correct"
 
 Agent code can look professional and still be wrong. Names, comments, and structure do not prove behavior.
 
 Tests and runtime verification do.
 
-### 14.4 Put Knowledge in Files
+### 17.4 Put Knowledge in Files
 
 When an agent discovers something useful, ask:
 
@@ -2028,7 +2719,7 @@ If yes, store it in:
 - an ADR
 - a focused code comment
 
-### 14.5 Stop Early When Direction Is Wrong
+### 17.5 Stop Early When Direction Is Wrong
 
 Do not keep negotiating with a bad direction.
 
@@ -2041,7 +2732,10 @@ Interrupting is a core skill.
 
 ---
 
-## 15. A Complete Workflow Example
+---
+<a id="chapter-18"></a>
+
+## 18. Complete Workflow Example
 
 A realistic feature flow might look like this.
 
@@ -2112,7 +2806,10 @@ Each session has a narrow purpose. Files carry memory across sessions.
 
 ---
 
-## 16. Anti-Patterns Checklist
+---
+<a id="chapter-19"></a>
+
+## 19. Anti-Patterns
 
 | Anti-Pattern | Result | Better Practice |
 |---|---|---|
@@ -2145,6 +2842,21 @@ Each session has a narrow purpose. Files carry memory across sessions.
 | AI deploys production | operational risk | require human approval |
 | using agents when workflow is enough | unpredictable cost | define workflow |
 | no evaluator exit condition | endless loop | max iterations |
+| complex review from chat summary only | miss blocking issues | independent reviewer + HTML artifact if needed |
+| stuck without recording, keep chatting | repeat failures, context blow-up | write blocker note, new session |
+| loop with no exit condition | runs forever, token burn | verifiable stopping condition + max_iter |
+| worker agent decides "done" itself | self-review all green | independent evaluator / reviewer |
+| loop without state file | cross-round amnesia, duplicate work | STATE.md / handoff / issue board |
+| too many MCP servers enabled | context eaten by schemas | enable by task; document defaults in AGENTS.md |
+| MCP with admin token | injection can change repo / exfiltrate | least privilege, read-only first |
+| cloud agent merged without review | review debt explosion | every PR human-reviewed + CI |
+| AGENTS.md only, no hooks | dangerous commands not blocked | hook hard blocks for critical ops |
+| lethal trifecta complete | private data + untrusted input + exfil | isolate subagents, sandbox, least privilege |
+| full YOLO auto-run commands | one injection executes | default confirm + allowlist |
+
+---
+
+---
 
 ---
 
