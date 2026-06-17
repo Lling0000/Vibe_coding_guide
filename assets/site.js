@@ -282,7 +282,7 @@ const copy = {
     brandLine: "AI Coding 工程工作流手册",
     plannerMode: "学习清单",
     scheduleMode: "学习计划",
-    readerMode: "章节阅读",
+    readerMode: "全文阅读",
     navKicker: "Feynman Loop",
     navTitle: "19 章 · 36 天费曼间隔练习",
     navCopy: "每天一个新章，到期旧章按 2-3-5-7 间隔短复述。",
@@ -393,7 +393,7 @@ const copy = {
     brandLine: "AI coding engineering workflow",
     plannerMode: "Checklist",
     scheduleMode: "Plan",
-    readerMode: "Chapter Reader",
+    readerMode: "Reader",
     navKicker: "Feynman Loop",
     navTitle: "19 Chapters · 36-Day Feynman Spacing",
     navCopy: "One new chapter per day; due reviews return on a 2-3-5-7 cadence.",
@@ -1048,12 +1048,16 @@ function focusedChapterSection() {
 }
 
 function readerVisibleHeadings() {
-  const headings = state.headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
-  const section = focusedChapterSection();
-  if (!section) return headings;
+  return state.headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+}
 
-  const nodes = new Set(section.nodes);
-  return headings.filter((heading) => nodes.has(heading.element));
+function headingChapterIndex(heading) {
+  const section = state.chapterSections.find((candidate) => candidate.nodes.includes(heading.element));
+  return section?.chapterIndex || null;
+}
+
+function headingById(id) {
+  return state.headings.find((heading) => heading.id === id) || null;
 }
 
 function chapterPageText(index) {
@@ -2230,6 +2234,11 @@ function renderToc() {
       const link = document.createElement("a");
       link.href = `#${heading.id}`;
       link.className = `depth-${heading.depth}`;
+      link.dataset.tocTarget = heading.id;
+      const chapterIndex = headingChapterIndex(heading);
+      if (chapterIndex) {
+        link.dataset.tocChapter = String(chapterIndex);
+      }
       link.textContent = heading.text;
 
       if (query && !heading.text.toLowerCase().includes(query)) {
@@ -2243,7 +2252,7 @@ function renderToc() {
 
 function observeHeadings() {
   state.observer?.disconnect();
-  const links = new Map([...els.toc.querySelectorAll("a")].map((link) => [link.hash.slice(1), link]));
+  const links = new Map([...els.toc.querySelectorAll("a")].map((link) => [link.dataset.tocTarget || link.hash.slice(1), link]));
 
   state.observer = new IntersectionObserver(
     (entries) => {
@@ -2284,6 +2293,25 @@ async function openChapter(chapterIndex) {
   setMode("reader");
   window.setTimeout(() => {
     els.readerView.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 40);
+}
+
+async function openTocTarget(id) {
+  if (state.guidePromise) {
+    await state.guidePromise.catch(() => {});
+  }
+
+  const heading = headingById(id);
+  if (!heading) return;
+
+  const chapterIndex = headingChapterIndex(heading);
+  if (chapterIndex) {
+    setReaderFocus(chapterIndex);
+  }
+  setMode("reader");
+
+  window.setTimeout(() => {
+    heading.element.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 40);
 }
 
@@ -2361,6 +2389,13 @@ document.addEventListener("click", (event) => {
   const openChapterButton = event.target.closest("[data-open-chapter]");
   if (openChapterButton) {
     openChapter(Number(openChapterButton.dataset.openChapter));
+    return;
+  }
+
+  const tocLink = event.target.closest("#toc-list a[href^='#']");
+  if (tocLink) {
+    event.preventDefault();
+    openTocTarget(tocLink.dataset.tocTarget || tocLink.hash.slice(1));
     return;
   }
 
