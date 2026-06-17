@@ -977,7 +977,9 @@ function setLanguageChrome(lang) {
   els.pdf.title = text.pdf;
   els.pdf.setAttribute("aria-label", text.pdf);
   els.search.placeholder = text.search;
-  els.topLabel.textContent = text.top;
+  if (els.topLabel) {
+    els.topLabel.textContent = text.top;
+  }
   els.readerKicker.textContent = text.readerKicker;
   els.readerTitle.textContent = doc.title;
   els.readerSummary.textContent = doc.summary;
@@ -1142,6 +1144,8 @@ function renderReaderHeader() {
 }
 
 function updateReaderStatus() {
+  if (!els.status) return;
+
   const section = focusedChapterSection();
   els.status.textContent = section
     ? `${docs[state.lang].status} · ${section.text}`
@@ -2506,7 +2510,9 @@ async function loadGuide(lang, shouldUpdateUrl = true) {
   renderSchedulePlan();
   els.article.classList.add("loading");
   els.article.innerHTML = copy[lang].loading;
-  els.status.textContent = `${docs[lang].status} · loading`;
+  if (els.status) {
+    els.status.textContent = `${docs[lang].status} · loading`;
+  }
 
   if (!window.marked || !window.DOMPurify) {
     throw new Error("Markdown renderer is unavailable.");
@@ -2720,7 +2726,9 @@ async function openTocTarget(id) {
 function showError(error) {
   console.error(error);
   const text = copy[state.lang];
-  els.status.textContent = text.loadError;
+  if (els.status) {
+    els.status.textContent = text.loadError;
+  }
   els.article.classList.remove("loading");
   els.article.innerHTML = `<h1>${text.loadError}</h1><p>${error.message}</p>`;
 }
@@ -2842,7 +2850,7 @@ els.resetAllButton.addEventListener("click", resetAllProgress);
 els.exportMatrixPdf.addEventListener("click", exportSchedulePdf);
 els.resetMatrix.addEventListener("click", resetMatrixProgress);
 els.search.addEventListener("input", renderToc);
-els.top.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+els.top?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 els.annotationPopover.addEventListener("mousedown", (event) => event.preventDefault());
 els.annotationPopover.addEventListener("pointerdown", (event) => event.preventDefault());
 els.annotationPopover.addEventListener("touchstart", (event) => event.preventDefault());
