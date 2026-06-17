@@ -1726,8 +1726,123 @@ button:disabled {
   }
 }
 
+.pdf-export-root {
+  position: fixed;
+  top: 0;
+  left: -200vw;
+  z-index: -1;
+  display: grid;
+  gap: 16px;
+  overflow: hidden;
+  background: #fff;
+  color: #111;
+  pointer-events: none;
+}
+
+.pdf-export-page {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  width: 794px;
+  height: 1122px;
+  box-sizing: border-box;
+  padding: 34px;
+  background: #fff;
+  color: #111;
+  font-family:
+    Inter,
+    "PingFang SC",
+    "Microsoft YaHei",
+    Arial,
+    sans-serif;
+}
+
+.pdf-export-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 12px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.pdf-export-header p,
+.pdf-export-header h1 {
+  margin: 0;
+}
+
+.pdf-export-header p {
+  grid-column: 1 / -1;
+  color: #0e6d63;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pdf-export-header h1 {
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.pdf-export-header span {
+  color: #4d5b57;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pdf-export-table {
+  width: 100%;
+  height: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  background: #fff;
+}
+
+.pdf-export-table th,
+.pdf-export-table td {
+  overflow: hidden;
+  padding: 5px;
+  border: 1.6px solid #111;
+  color: #111;
+  font-size: 13px;
+  line-height: 1.16;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.pdf-export-table thead th {
+  height: 32px;
+  background: #eef5f2;
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.pdf-export-table tbody th {
+  width: 68px;
+  font-weight: 900;
+}
+
+.pdf-export-chapter {
+  font-weight: 850;
+}
+
+.pdf-export-check {
+  display: inline-grid;
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  place-items: center;
+  border-radius: 4px;
+  background: #16a34a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 1;
+}
+
 @page {
-  size: A4 landscape;
+  size: A4 portrait;
   margin: 10mm;
 }
 

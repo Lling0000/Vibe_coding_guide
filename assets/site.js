@@ -8,6 +8,18 @@ const REVIEW_OFFSETS = REVIEW_INTERVALS.reduce((offsets, interval) => {
 const PLAN_DAY_COUNT = CHAPTER_COUNT + REVIEW_OFFSETS.at(-1);
 const ANNOTATABLE_SELECTOR = "h2, h3, h4, p, li, blockquote, td, th";
 const DISCUSSION_NEW_URL = "https://github.com/Lling0000/Vibe_coding_guide/discussions/new?category=q-a";
+const PDF_EXPORT_SCRIPTS = [
+  "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js",
+  "https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js",
+];
+const PDF_A4_PORTRAIT = {
+  widthMm: 210,
+  heightMm: 297,
+  widthPx: 794,
+  heightPx: 1122,
+  rowsPerPage: 18,
+};
+const scriptPromises = new Map();
 
 const docs = {
   zh: {
@@ -313,6 +325,7 @@ const copy = {
     matrixKicker: "Schedule Table",
     matrixTitle: "间隔学习总表",
     exportMatrixPdf: "导出 PDF",
+    exportMatrixPdfBusy: "生成 A4 PDF...",
     exportMatrixPdfTitle: "Vibe Coding Guide · 36 天学习计划",
     resetMatrix: "清空表格勾选",
     resetMatrixConfirm: "确定要清空总表里的所有勾选吗?",
@@ -424,6 +437,7 @@ const copy = {
     matrixKicker: "Schedule Table",
     matrixTitle: "Spaced Learning Table",
     exportMatrixPdf: "Export PDF",
+    exportMatrixPdfBusy: "Building A4 PDF...",
     exportMatrixPdfTitle: "Vibe Coding Guide · 36-Day Learning Plan",
     resetMatrix: "Clear table checks",
     resetMatrixConfirm: "Clear all table checks?",
@@ -2075,7 +2089,141 @@ function resetMatrixProgress() {
   renderSchedulePlan();
 }
 
-function exportSchedulePdf() {
+function loadScriptOnce(src) {
+  if (scriptPromises.has(src)) return scriptPromises.get(src);
+
+  const promise = new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing?.dataset.loaded === "true") {
+      resolve();
+      return;
+    }
+
+    const script = existing || document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.addEventListener("load", () => {
+      script.dataset.loaded = "true";
+      resolve();
+    }, { once: true });
+    script.addEventListener("error", () => reject(new Error(`Unable to load ${src}`)), { once: true });
+
+    if (!existing) {
+      document.head.append(script);
+    }
+  });
+
+  scriptPromises.set(src, promise);
+  return promise;
+}
+
+async function loadPdfExportLibraries() {
+  if (window.html2canvas && window.jspdf?.jsPDF) return;
+  await Promise.all(PDF_EXPORT_SCRIPTS.map(loadScriptOnce));
+
+  if (!window.html2canvas || !window.jspdf?.jsPDF) {
+    throw new Error("PDF export libraries are unavailable.");
+  }
+}
+
+function schedulePdfFilename() {
+  const lang = state.lang === "zh" ? "zh" : "en";
+  return `vibe-coding-guide-schedule-a4-portrait-${lang}.pdf`;
+}
+
+function createSchedulePdfCell(item, text) {
+  const cell = document.createElement("td");
+  if (!item) return cell;
+
+  const chapter = document.createElement("span");
+  chapter.className = "pdf-export-chapter";
+  chapter.textContent = text.matrixItem(item.chapterIndex);
+  cell.append(chapter);
+
+  if (isChecked(item.id)) {
+    const check = document.createElement("span");
+    check.className = "pdf-export-check";
+    check.textContent = "✓";
+    cell.append(check);
+  }
+
+  return cell;
+}
+
+function createSchedulePdfTable(startDay, endDay) {
+  const text = copy[state.lang];
+  const columns = [
+    text.matrixDay,
+    text.matrixLearn,
+    ...REVIEW_INTERVALS.map((_, index) => text.matrixReview(index + 1)),
+  ];
+
+  const table = document.createElement("table");
+  table.className = "pdf-export-table";
+
+  const thead = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  columns.forEach((label) => {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = label;
+    headRow.append(th);
+  });
+  thead.append(headRow);
+
+  const tbody = document.createElement("tbody");
+  for (let day = startDay; day <= endDay; day += 1) {
+    const row = document.createElement("tr");
+    const dayHeader = document.createElement("th");
+    dayHeader.scope = "row";
+    dayHeader.textContent = text.dayLabel(day);
+    row.append(dayHeader);
+
+    const itemsByColumn = new Map(getScheduleMatrixItems(day).map((item) => [item.column, item]));
+    for (let column = 0; column <= REVIEW_INTERVALS.length; column += 1) {
+      row.append(createSchedulePdfCell(itemsByColumn.get(column), text));
+    }
+
+    tbody.append(row);
+  }
+
+  table.append(thead, tbody);
+  return table;
+}
+
+function createSchedulePdfRoot() {
+  const text = copy[state.lang];
+  const pageCount = Math.ceil(PLAN_DAY_COUNT / PDF_A4_PORTRAIT.rowsPerPage);
+  const pageSizeLabel = state.lang === "zh" ? "A4 纵向" : "A4 portrait";
+  const root = document.createElement("div");
+  root.className = "pdf-export-root";
+  root.setAttribute("aria-hidden", "true");
+
+  for (let pageIndex = 0; pageIndex < pageCount; pageIndex += 1) {
+    const startDay = pageIndex * PDF_A4_PORTRAIT.rowsPerPage + 1;
+    const endDay = Math.min(PLAN_DAY_COUNT, startDay + PDF_A4_PORTRAIT.rowsPerPage - 1);
+    const page = document.createElement("section");
+    page.className = "pdf-export-page";
+
+    const header = document.createElement("header");
+    header.className = "pdf-export-header";
+    const kicker = document.createElement("p");
+    kicker.textContent = text.matrixKicker;
+    const title = document.createElement("h1");
+    title.textContent = text.exportMatrixPdfTitle;
+    const meta = document.createElement("span");
+    meta.textContent = `${text.dayLabel(startDay)} - ${text.dayLabel(endDay)} / ${pageSizeLabel}`;
+    header.append(kicker, title, meta);
+
+    page.append(header, createSchedulePdfTable(startDay, endDay));
+    root.append(page);
+  }
+
+  return root;
+}
+
+function printSchedulePdfFallback() {
   const previousTitle = document.title;
   document.body.dataset.printMode = "schedule";
   document.title = copy[state.lang].exportMatrixPdfTitle;
@@ -2090,6 +2238,65 @@ function exportSchedulePdf() {
   );
 
   window.requestAnimationFrame(() => window.print());
+}
+
+async function exportSchedulePdf() {
+  const text = copy[state.lang];
+  const previousLabel = els.exportMatrixPdfLabel.textContent;
+  els.exportMatrixPdf.disabled = true;
+  els.exportMatrixPdfLabel.textContent = text.exportMatrixPdfBusy;
+
+  let root = null;
+  try {
+    await loadPdfExportLibraries();
+    root = createSchedulePdfRoot();
+    document.body.append(root);
+    await document.fonts?.ready;
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true,
+    });
+    const pages = [...root.querySelectorAll(".pdf-export-page")];
+
+    for (const [index, page] of pages.entries()) {
+      const canvas = await window.html2canvas(page, {
+        backgroundColor: "#ffffff",
+        logging: false,
+        scale: 2,
+        useCORS: true,
+        windowWidth: PDF_A4_PORTRAIT.widthPx,
+        windowHeight: PDF_A4_PORTRAIT.heightPx,
+      });
+
+      if (index > 0) {
+        pdf.addPage("a4", "portrait");
+      }
+
+      pdf.addImage(
+        canvas.toDataURL("image/png"),
+        "PNG",
+        0,
+        0,
+        PDF_A4_PORTRAIT.widthMm,
+        PDF_A4_PORTRAIT.heightMm,
+        undefined,
+        "FAST",
+      );
+    }
+
+    pdf.save(schedulePdfFilename());
+  } catch (error) {
+    console.warn("A4 PDF export failed, falling back to browser print.", error);
+    printSchedulePdfFallback();
+  } finally {
+    root?.remove();
+    els.exportMatrixPdf.disabled = false;
+    els.exportMatrixPdfLabel.textContent = previousLabel || text.exportMatrixPdf;
+  }
 }
 
 async function loadGuide(lang, shouldUpdateUrl = true) {
