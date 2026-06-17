@@ -24,6 +24,7 @@
   --sidebar-offset: 0px;
   --content: 66rem;
   --reader-content: 55rem;
+  --reader-rail: clamp(17rem, 22vw, 21rem);
   --radius: 8px;
   --radius-sm: 6px;
 }
@@ -75,7 +76,7 @@ button:disabled {
 .site-progress {
   position: fixed;
   inset: 0 0 auto;
-  z-index: 50;
+  z-index: 120;
   height: 4px;
   background: transparent;
 }
@@ -89,8 +90,10 @@ button:disabled {
 
 .topbar {
   position: fixed;
-  inset: 0 0 auto;
-  z-index: 40;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 110;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -100,6 +103,7 @@ button:disabled {
   border-bottom: 1px solid rgb(213 224 221 / 82%);
   background: rgb(246 250 248 / 92%);
   backdrop-filter: blur(18px);
+  transform: translateZ(0);
 }
 
 .brand {
@@ -258,7 +262,7 @@ button:disabled {
   top: var(--topbar-offset);
   bottom: 0;
   left: 0;
-  z-index: 20;
+  z-index: 80;
   width: var(--sidebar);
   height: calc(100dvh - var(--topbar-offset));
   overflow: hidden;
@@ -517,7 +521,7 @@ button:disabled {
 }
 
 .reader-view {
-  width: min(100%, calc(var(--reader-content) + clamp(2rem, 7vw, 7rem)));
+  width: min(100%, calc(var(--reader-content) + var(--reader-rail) + clamp(2rem, 7vw, 7rem)));
 }
 
 .learning-hero {
@@ -1057,8 +1061,19 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+.reader-shell {
+  display: grid;
+  grid-template-columns: minmax(0, var(--reader-content)) minmax(16rem, var(--reader-rail));
+  gap: clamp(1rem, 3vw, 2rem);
+  align-items: start;
+}
+
+.reader-column {
+  min-width: 0;
+}
+
 .prose {
-  max-width: var(--reader-content);
+  max-width: 100%;
   padding-top: 1.5rem;
 }
 
@@ -1163,6 +1178,202 @@ button:disabled {
   border-spacing: 0;
 }
 
+.chapter-pager {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.chapter-page-button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+  min-height: 4.5rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chapter-page-button.next {
+  grid-template-columns: minmax(0, 1fr) auto;
+  text-align: right;
+}
+
+.chapter-page-button:not(:disabled):hover {
+  border-color: var(--accent);
+  background: rgb(216 237 232 / 42%);
+  transform: translateY(-1px);
+}
+
+.chapter-page-button svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accent-strong);
+}
+
+.chapter-page-button span {
+  min-width: 0;
+}
+
+.chapter-page-kicker {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.chapter-page-button strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.18rem;
+  font-size: 0.92rem;
+  line-height: 1.28;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.annotation-panel {
+  position: sticky;
+  top: calc(var(--topbar-offset) + 1rem);
+  display: grid;
+  gap: 0.8rem;
+  max-height: calc(100dvh - var(--topbar-offset) - 2rem);
+  margin-top: 1.5rem;
+  padding: 0.95rem;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgb(255 255 255 / 86%);
+  box-shadow: 0 14px 34px rgb(29 37 40 / 7%);
+  backdrop-filter: blur(14px);
+}
+
+.annotation-panel-head {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.annotation-panel h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.annotation-tools {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.annotation-tools .icon-button {
+  width: 100%;
+}
+
+.annotation-status {
+  min-height: 2.4rem;
+  padding: 0.62rem;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.annotation-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.annotation-card {
+  display: grid;
+  gap: 0.58rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.annotation-card.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgb(15 118 110 / 12%);
+}
+
+.annotation-card-kicker {
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.annotation-card-quote {
+  margin: 0;
+  padding-left: 0.65rem;
+  border-left: 0.18rem solid var(--gold);
+  color: var(--ink);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.annotation-card-comment {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.annotation-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.annotation-card-actions .text-button {
+  min-height: 2rem;
+  padding: 0 0.55rem;
+  font-size: 0.75rem;
+}
+
+.annotation-mark {
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.annotation-mark.is-highlight {
+  background: linear-gradient(180deg, transparent 12%, #fff2a3 12%, #fff2a3 88%, transparent 88%);
+  box-shadow: inset 0 -0.12em rgb(160 109 18 / 20%);
+}
+
+.annotation-mark.is-underline {
+  background: rgb(216 237 232 / 42%);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 0.14em;
+  text-underline-offset: 0.16em;
+}
+
+.annotation-mark.is-comment {
+  background: linear-gradient(180deg, transparent 10%, var(--coral-soft) 10%, var(--coral-soft) 90%, transparent 90%);
+}
+
+.annotation-mark.has-comment {
+  outline: 1px dashed rgb(184 77 55 / 50%);
+  outline-offset: 0.08em;
+}
+
+.annotation-mark.is-active {
+  outline: 2px solid rgb(15 118 110 / 55%);
+  outline-offset: 0.1em;
+}
+
 .prose th,
 .prose td {
   min-width: 9rem;
@@ -1232,6 +1443,17 @@ button:disabled {
   margin-right: 1rem;
   color: var(--accent-strong);
   font-weight: 850;
+}
+
+@media (max-width: 1180px) {
+  .reader-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .annotation-panel {
+    position: static;
+    max-height: none;
+  }
 }
 
 @media (max-width: 1040px) {
@@ -1463,6 +1685,14 @@ button:disabled {
     flex-direction: column;
     justify-content: center;
     padding: 0.75rem 0;
+  }
+
+  .chapter-pager {
+    grid-template-columns: 1fr;
+  }
+
+  .chapter-page-button.next {
+    text-align: left;
   }
 
   .reader-summary,

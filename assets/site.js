@@ -6,6 +6,8 @@ const REVIEW_OFFSETS = REVIEW_INTERVALS.reduce((offsets, interval) => {
   return offsets;
 }, []);
 const PLAN_DAY_COUNT = CHAPTER_COUNT + REVIEW_OFFSETS.at(-1);
+const ANNOTATABLE_SELECTOR = "h2, h3, h4, p, li, blockquote, td, th";
+const DISCUSSION_NEW_URL = "https://github.com/Lling0000/Vibe_coding_guide/discussions/new?category=q-a";
 
 const docs = {
   zh: {
@@ -334,6 +336,44 @@ const copy = {
     pdf: "下载 PDF",
     github: "GitHub 仓库",
     openChapter: "读原文章节",
+    prevChapterKicker: "上一章",
+    nextChapterKicker: "下一章",
+    chapterPageTitle: (index, title) => `第 ${index} 章 · ${title}`,
+    chapterUnavailable: "没有更多章节",
+    annotationKicker: "Reader Notes",
+    annotationTitle: "批注评论",
+    annotationStatus: "选中正文后，点击高亮、下划线或评论。",
+    annotationEmpty: "当前阅读范围还没有批注。",
+    annotationNeedSelection: "先在正文里选中一段文字。",
+    annotationOutside: "请选中正文里的文字。",
+    annotationSameBlock: "一次批注先选同一段落、标题或列表项里的文字。",
+    annotationCommentPrompt: "给这段文字添加评论：",
+    annotationNoComment: "没有评论",
+    annotationSaved: "批注已保存。",
+    annotationDeleted: "批注已删除。",
+    annotationHighlight: "高亮",
+    annotationUnderline: "下划线",
+    annotationComment: "评论",
+    annotationDelete: "删除",
+    annotationDiscuss: "发到讨论",
+    annotationCopied: "已复制批注内容，并打开 GitHub Discussions。",
+    annotationCopyFailed: "已打开 GitHub Discussions；如果没有自动复制，请手动复制卡片内容。",
+    annotationChapterLabel: (index) => `第 ${index} 章`,
+    annotationDiscussionTitle: (chapterLabel, title) => `阅读批注：${chapterLabel} ${title}`,
+    annotationDiscussionBody: ({ chapterLabel, chapterTitle, quote, comment, url }) =>
+      [
+        `## 章节`,
+        `${chapterLabel} · ${chapterTitle}`,
+        "",
+        "## 原文摘录",
+        `> ${quote}`,
+        "",
+        "## 我的评论",
+        comment || "（这里补充你的想法）",
+        "",
+        "## 页面",
+        url,
+      ].join("\n"),
     kickoff: (day) => preReadTaskText("zh", day),
     newPart: (day) => `打开第 ${day} 章前，写下一个和它相关的真实工作场景。`,
     explainGoal: "读完后准备一个 3 分钟白话讲解：只讲问题、类比、步骤、例子。",
@@ -405,6 +445,44 @@ const copy = {
     pdf: "Download PDF",
     github: "GitHub repository",
     openChapter: "Read chapter",
+    prevChapterKicker: "Previous",
+    nextChapterKicker: "Next",
+    chapterPageTitle: (index, title) => `Chapter ${index} · ${title}`,
+    chapterUnavailable: "No more chapters",
+    annotationKicker: "Reader Notes",
+    annotationTitle: "Annotations",
+    annotationStatus: "Select text in the guide, then highlight, underline, or comment.",
+    annotationEmpty: "No annotations in the current reading range yet.",
+    annotationNeedSelection: "Select text in the guide first.",
+    annotationOutside: "Please select text inside the guide.",
+    annotationSameBlock: "For now, keep one annotation inside the same paragraph, heading, or list item.",
+    annotationCommentPrompt: "Add a comment for this text:",
+    annotationNoComment: "No comment",
+    annotationSaved: "Annotation saved.",
+    annotationDeleted: "Annotation deleted.",
+    annotationHighlight: "Highlight",
+    annotationUnderline: "Underline",
+    annotationComment: "Comment",
+    annotationDelete: "Delete",
+    annotationDiscuss: "Discuss",
+    annotationCopied: "Copied the annotation and opened GitHub Discussions.",
+    annotationCopyFailed: "Opened GitHub Discussions; copy the card text manually if needed.",
+    annotationChapterLabel: (index) => `Chapter ${index}`,
+    annotationDiscussionTitle: (chapterLabel, title) => `Reader note: ${chapterLabel} ${title}`,
+    annotationDiscussionBody: ({ chapterLabel, chapterTitle, quote, comment, url }) =>
+      [
+        `## Chapter`,
+        `${chapterLabel} · ${chapterTitle}`,
+        "",
+        "## Quote",
+        `> ${quote}`,
+        "",
+        "## Comment",
+        comment || "(Add your thought here.)",
+        "",
+        "## Page",
+        url,
+      ].join("\n"),
     kickoff: (day) => preReadTaskText("en", day),
     newPart: (day) => `Before opening Chapter ${day}, write one real work situation it should help with.`,
     explainGoal: "After reading, prepare a 3-minute plain-language explanation: problem, analogy, steps, example.",
@@ -514,6 +592,8 @@ const state = {
   chapterTargets: [],
   chapterSections: [],
   focusedChapterIndex: null,
+  annotations: [],
+  activeAnnotationId: null,
   observer: null,
   guidePromise: null,
 };
@@ -595,6 +675,20 @@ const els = {
   metricChapters: document.querySelector("#metric-chapters"),
   metricLanguages: document.querySelector("#metric-languages"),
   metricPdf: document.querySelector("#metric-pdf"),
+  chapterPager: document.querySelector("#chapter-pager"),
+  prevChapter: document.querySelector("#prev-chapter-button"),
+  prevChapterKicker: document.querySelector("#prev-chapter-kicker"),
+  prevChapterTitle: document.querySelector("#prev-chapter-title"),
+  nextChapter: document.querySelector("#next-chapter-button"),
+  nextChapterKicker: document.querySelector("#next-chapter-kicker"),
+  nextChapterTitle: document.querySelector("#next-chapter-title"),
+  annotationKicker: document.querySelector("#annotation-kicker"),
+  annotationTitle: document.querySelector("#annotation-title"),
+  annotationStatus: document.querySelector("#annotation-status"),
+  annotationList: document.querySelector("#annotation-list"),
+  highlightButton: document.querySelector("#highlight-button"),
+  underlineButton: document.querySelector("#underline-button"),
+  commentButton: document.querySelector("#comment-button"),
 };
 
 function preferredLanguage() {
@@ -669,6 +763,22 @@ function setChecked(key, checked) {
   }
 }
 
+function readAnnotations(lang = state.lang) {
+  const raw = getStoredText(annotationStorageKey(lang));
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((item) => item && item.id && item.quote) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeAnnotations() {
+  setStoredText(annotationStorageKey(state.lang), JSON.stringify(state.annotations));
+}
+
 function taskId(day, scope, key) {
   return `feynman:v4:day-${day}:${scope}:${key}`;
 }
@@ -679,6 +789,15 @@ function noteId(day) {
 
 function matrixId(day, type, chapterIndex, reviewNumber = 0) {
   return `feynman:v4:matrix:day-${day}:${type}-${chapterIndex}-${reviewNumber}`;
+}
+
+function annotationStorageKey(lang = state.lang) {
+  return `feynman:v5:annotations:${lang}`;
+}
+
+function annotationId() {
+  if (window.crypto?.randomUUID) return `ann-${window.crypto.randomUUID()}`;
+  return `ann-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function chapterTitle(lang, day) {
@@ -837,7 +956,21 @@ function setLanguageChrome(lang) {
   els.metricChapters.innerHTML = `<strong>${CHAPTER_COUNT}</strong> ${doc.metrics.chapters}`;
   els.metricLanguages.innerHTML = `<strong>2</strong> ${doc.metrics.languages}`;
   els.metricPdf.innerHTML = `<strong>PDF</strong> ${doc.metrics.pdf}`;
+  els.prevChapterKicker.textContent = text.prevChapterKicker;
+  els.nextChapterKicker.textContent = text.nextChapterKicker;
+  els.annotationKicker.textContent = text.annotationKicker;
+  els.annotationTitle.textContent = text.annotationTitle;
+  els.annotationStatus.textContent = text.annotationStatus;
+  [
+    [els.highlightButton, text.annotationHighlight],
+    [els.underlineButton, text.annotationUnderline],
+    [els.commentButton, text.annotationComment],
+  ].forEach(([button, label]) => {
+    button.title = label;
+    button.setAttribute("aria-label", label);
+  });
   renderReaderHeader();
+  renderAnnotationList();
 
   els.langButtons.forEach((button) => {
     const isActive = button.dataset.lang === lang;
@@ -914,10 +1047,49 @@ function readerVisibleHeadings() {
   return headings.filter((heading) => nodes.has(heading.element));
 }
 
+function chapterPageText(index) {
+  const text = copy[state.lang];
+  const title = chapters[state.lang]?.[index - 1]?.title || state.chapterTargets[index - 1]?.text || "";
+  return text.chapterPageTitle(index, title);
+}
+
+function updateChapterPageButton(button, titleElement, index) {
+  const text = copy[state.lang];
+  const isAvailable = Number.isInteger(index) && index >= 1 && index <= CHAPTER_COUNT && state.chapterTargets[index - 1];
+
+  button.disabled = !isAvailable;
+  if (isAvailable) {
+    const label = chapterPageText(index);
+    button.dataset.openChapter = String(index);
+    button.title = label;
+    button.setAttribute("aria-label", label);
+    titleElement.textContent = label;
+  } else {
+    delete button.dataset.openChapter;
+    button.removeAttribute("title");
+    button.setAttribute("aria-label", text.chapterUnavailable);
+    titleElement.textContent = text.chapterUnavailable;
+  }
+}
+
+function renderChapterPager() {
+  if (!els.chapterPager) return;
+
+  const current = state.focusedChapterIndex || 0;
+  const prevIndex = current > 1 ? current - 1 : null;
+  const nextIndex = current ? current + 1 : 1;
+
+  els.prevChapterKicker.textContent = copy[state.lang].prevChapterKicker;
+  els.nextChapterKicker.textContent = copy[state.lang].nextChapterKicker;
+  updateChapterPageButton(els.prevChapter, els.prevChapterTitle, prevIndex);
+  updateChapterPageButton(els.nextChapter, els.nextChapterTitle, nextIndex);
+}
+
 function renderReaderHeader() {
   const doc = docs[state.lang];
   const text = copy[state.lang];
   const section = focusedChapterSection();
+  renderChapterPager();
 
   if (section) {
     const chapter = chapters[state.lang][section.chapterIndex - 1];
@@ -972,7 +1144,411 @@ function setReaderFocus(chapterIndex) {
   applyReaderFocus();
   renderToc();
   observeHeadings();
+  renderAnnotations();
   updateReadingProgress();
+}
+
+function cssEscape(value) {
+  return window.CSS?.escape ? CSS.escape(value) : String(value).replace(/["\\]/g, "\\$&");
+}
+
+function setAnnotationStatus(message) {
+  if (els.annotationStatus) {
+    els.annotationStatus.textContent = message || copy[state.lang].annotationStatus;
+  }
+}
+
+function annotationStyleLabel(style) {
+  const text = copy[state.lang];
+  if (style === "underline") return text.annotationUnderline;
+  if (style === "comment") return text.annotationComment;
+  return text.annotationHighlight;
+}
+
+function chapterMeta(index) {
+  const chapterTitleText = chapters[state.lang]?.[index - 1]?.title || state.chapterTargets[index - 1]?.text || "";
+  return {
+    label: copy[state.lang].annotationChapterLabel(index),
+    title: chapterTitleText,
+  };
+}
+
+function collectAnnotatableBlocks(section = null) {
+  const roots = section ? section.nodes : [...els.article.children];
+  const blocks = [];
+  const seen = new Set();
+
+  roots.forEach((root) => {
+    if (root.matches?.(ANNOTATABLE_SELECTOR)) {
+      blocks.push(root);
+      seen.add(root);
+    }
+    root.querySelectorAll?.(ANNOTATABLE_SELECTOR).forEach((block) => {
+      if (!seen.has(block)) {
+        blocks.push(block);
+        seen.add(block);
+      }
+    });
+  });
+
+  return blocks.filter((block) => els.article.contains(block) && !block.closest("pre, .mermaid"));
+}
+
+function assignAnnotatableBlocks() {
+  state.chapterSections.forEach((section) => {
+    collectAnnotatableBlocks(section).forEach((block, index) => {
+      block.dataset.blockId = `${state.lang}-ch-${section.chapterIndex}-b-${index}`;
+      block.dataset.chapterIndex = String(section.chapterIndex);
+    });
+  });
+}
+
+function findAnnotationBlock(node) {
+  const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+  if (!element || !els.article.contains(element)) return null;
+  if (element.closest("pre, .mermaid")) return null;
+
+  const block = element.closest(ANNOTATABLE_SELECTOR);
+  return block && els.article.contains(block) ? block : null;
+}
+
+function offsetInBlock(block, container, offset) {
+  try {
+    const range = document.createRange();
+    range.selectNodeContents(block);
+    range.setEnd(container, offset);
+    const length = range.toString().length;
+    range.detach();
+    return length;
+  } catch {
+    return -1;
+  }
+}
+
+function clearAnnotationMarks() {
+  els.article.querySelectorAll(".annotation-mark").forEach((mark) => {
+    const parent = mark.parentNode;
+    if (!parent) return;
+
+    while (mark.firstChild) {
+      parent.insertBefore(mark.firstChild, mark);
+    }
+    mark.remove();
+    parent.normalize();
+  });
+}
+
+function rangeFromOffsets(block, startOffset, endOffset) {
+  if (!block || endOffset <= startOffset) return null;
+
+  const range = document.createRange();
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+  let position = 0;
+  let hasStart = false;
+  let hasEnd = false;
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    const length = node.textContent.length;
+    const nextPosition = position + length;
+
+    if (!hasStart && startOffset >= position && startOffset <= nextPosition) {
+      range.setStart(node, Math.min(length, startOffset - position));
+      hasStart = true;
+    }
+
+    if (!hasEnd && endOffset >= position && endOffset <= nextPosition) {
+      range.setEnd(node, Math.min(length, endOffset - position));
+      hasEnd = true;
+      break;
+    }
+
+    position = nextPosition;
+  }
+
+  if (hasStart && hasEnd) return range;
+  range.detach();
+  return null;
+}
+
+function locateAnnotation(annotation) {
+  const quote = annotation.quote || "";
+  const trimmedQuote = quote.trim();
+  const block = annotation.blockId
+    ? els.article.querySelector(`[data-block-id="${cssEscape(annotation.blockId)}"]`)
+    : null;
+
+  function locateInBlock(candidate) {
+    if (!candidate) return null;
+    const text = candidate.textContent || "";
+    const start = Number(annotation.startOffset);
+    const end = Number(annotation.endOffset);
+
+    if (Number.isFinite(start) && Number.isFinite(end) && text.slice(start, end) === quote) {
+      return { block: candidate, startOffset: start, endOffset: end };
+    }
+
+    const rawIndex = quote ? text.indexOf(quote) : -1;
+    if (rawIndex >= 0) {
+      return { block: candidate, startOffset: rawIndex, endOffset: rawIndex + quote.length };
+    }
+
+    const trimmedIndex = trimmedQuote ? text.indexOf(trimmedQuote) : -1;
+    if (trimmedIndex >= 0) {
+      return {
+        block: candidate,
+        startOffset: trimmedIndex,
+        endOffset: trimmedIndex + trimmedQuote.length,
+      };
+    }
+
+    return null;
+  }
+
+  const direct = locateInBlock(block);
+  if (direct) return direct;
+
+  const section = state.chapterSections[annotation.chapterIndex - 1] || null;
+  for (const candidate of collectAnnotatableBlocks(section)) {
+    const located = locateInBlock(candidate);
+    if (located) return located;
+  }
+
+  return null;
+}
+
+function applyAnnotationMark(annotation) {
+  const located = locateAnnotation(annotation);
+  if (!located) return false;
+
+  const range = rangeFromOffsets(located.block, located.startOffset, located.endOffset);
+  if (!range) return false;
+
+  const wrapper = document.createElement(annotation.style === "underline" ? "span" : "mark");
+  wrapper.className = `annotation-mark is-${annotation.style || "highlight"}`;
+  wrapper.dataset.annotationId = annotation.id;
+  wrapper.classList.toggle("is-active", annotation.id === state.activeAnnotationId);
+  if (annotation.comment) {
+    wrapper.classList.add("has-comment");
+  }
+
+  const contents = range.extractContents();
+  wrapper.append(contents);
+  range.insertNode(wrapper);
+  range.detach();
+  return true;
+}
+
+function annotationsForCurrentRange() {
+  const section = focusedChapterSection();
+  return state.annotations.filter((annotation) => !section || annotation.chapterIndex === section.chapterIndex);
+}
+
+function renderAnnotationList() {
+  if (!els.annotationList) return;
+
+  const text = copy[state.lang];
+  const annotations = annotationsForCurrentRange().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  els.annotationList.innerHTML = "";
+
+  if (!annotations.length) {
+    const empty = document.createElement("div");
+    empty.className = "annotation-card";
+    const message = document.createElement("p");
+    message.className = "annotation-card-comment";
+    message.textContent = text.annotationEmpty;
+    empty.append(message);
+    els.annotationList.append(empty);
+    return;
+  }
+
+  annotations.forEach((annotation) => {
+    const meta = chapterMeta(annotation.chapterIndex);
+    const card = document.createElement("article");
+    card.className = "annotation-card";
+    card.classList.toggle("is-active", annotation.id === state.activeAnnotationId);
+    card.dataset.annotationCard = "";
+    card.dataset.annotationId = annotation.id;
+
+    const kicker = document.createElement("span");
+    kicker.className = "annotation-card-kicker";
+    kicker.textContent = `${meta.label} · ${annotationStyleLabel(annotation.style)}`;
+
+    const quote = document.createElement("blockquote");
+    quote.className = "annotation-card-quote";
+    quote.textContent = (annotation.quote || "").trim();
+
+    const comment = document.createElement("p");
+    comment.className = "annotation-card-comment";
+    comment.textContent = annotation.comment || text.annotationNoComment;
+
+    const actions = document.createElement("div");
+    actions.className = "annotation-card-actions";
+
+    const discuss = document.createElement("button");
+    discuss.type = "button";
+    discuss.className = "text-button";
+    discuss.dataset.discussAnnotation = annotation.id;
+    discuss.innerHTML = '<i data-lucide="external-link" aria-hidden="true"></i>';
+    const discussLabel = document.createElement("span");
+    discussLabel.textContent = text.annotationDiscuss;
+    discuss.append(discussLabel);
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "text-button";
+    remove.dataset.deleteAnnotation = annotation.id;
+    remove.innerHTML = '<i data-lucide="trash-2" aria-hidden="true"></i>';
+    const removeLabel = document.createElement("span");
+    removeLabel.textContent = text.annotationDelete;
+    remove.append(removeLabel);
+
+    actions.append(discuss, remove);
+    card.append(kicker, quote, comment, actions);
+    els.annotationList.append(card);
+  });
+
+  window.lucide?.createIcons();
+}
+
+function renderAnnotations() {
+  if (!els.article || els.article.classList.contains("loading")) return;
+
+  clearAnnotationMarks();
+  [...state.annotations]
+    .sort((a, b) => {
+      if (a.blockId === b.blockId) return Number(b.startOffset) - Number(a.startOffset);
+      return String(a.blockId).localeCompare(String(b.blockId));
+    })
+    .forEach(applyAnnotationMark);
+  renderAnnotationList();
+}
+
+function createAnnotation(style) {
+  const text = copy[state.lang];
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+    setAnnotationStatus(text.annotationNeedSelection);
+    return;
+  }
+
+  const range = selection.getRangeAt(0);
+  if (!els.article.contains(range.commonAncestorContainer)) {
+    setAnnotationStatus(text.annotationOutside);
+    return;
+  }
+
+  const startBlock = findAnnotationBlock(range.startContainer);
+  const endBlock = findAnnotationBlock(range.endContainer);
+  if (!startBlock || !endBlock || startBlock !== endBlock) {
+    setAnnotationStatus(text.annotationSameBlock);
+    return;
+  }
+
+  const startOffset = offsetInBlock(startBlock, range.startContainer, range.startOffset);
+  const endOffset = offsetInBlock(startBlock, range.endContainer, range.endOffset);
+  if (startOffset < 0 || endOffset <= startOffset) {
+    setAnnotationStatus(text.annotationNeedSelection);
+    return;
+  }
+
+  const quote = startBlock.textContent.slice(startOffset, endOffset);
+  if (!quote.trim()) {
+    setAnnotationStatus(text.annotationNeedSelection);
+    return;
+  }
+
+  let comment = "";
+  if (style === "comment") {
+    const entered = window.prompt(text.annotationCommentPrompt, "");
+    if (entered === null) return;
+    comment = entered.trim();
+  }
+
+  const chapterIndex = Number(startBlock.dataset.chapterIndex);
+  if (!Number.isInteger(chapterIndex) || chapterIndex < 1) {
+    setAnnotationStatus(text.annotationOutside);
+    return;
+  }
+
+  const annotation = {
+    id: annotationId(),
+    lang: state.lang,
+    chapterIndex,
+    blockId: startBlock.dataset.blockId,
+    style,
+    quote,
+    startOffset,
+    endOffset,
+    comment,
+    createdAt: new Date().toISOString(),
+  };
+
+  state.annotations.push(annotation);
+  state.activeAnnotationId = annotation.id;
+  writeAnnotations();
+  selection.removeAllRanges();
+  renderAnnotations();
+  setAnnotationStatus(text.annotationSaved);
+}
+
+function focusAnnotation(id) {
+  state.activeAnnotationId = id;
+  renderAnnotations();
+
+  const mark = els.article.querySelector(`.annotation-mark[data-annotation-id="${cssEscape(id)}"]`);
+  mark?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function deleteAnnotation(id) {
+  state.annotations = state.annotations.filter((annotation) => annotation.id !== id);
+  if (state.activeAnnotationId === id) {
+    state.activeAnnotationId = null;
+  }
+  writeAnnotations();
+  renderAnnotations();
+  setAnnotationStatus(copy[state.lang].annotationDeleted);
+}
+
+function annotationDiscussionPayload(annotation) {
+  const meta = chapterMeta(annotation.chapterIndex);
+  const pageUrl = new URL(window.location.href);
+  pageUrl.searchParams.set("lang", state.lang);
+  pageUrl.searchParams.set("view", "reader");
+  pageUrl.searchParams.set("chapter", String(annotation.chapterIndex));
+  const target = state.chapterTargets[annotation.chapterIndex - 1];
+  if (target?.id) {
+    pageUrl.hash = target.id;
+  }
+
+  const title = copy[state.lang].annotationDiscussionTitle(meta.label, meta.title);
+  const body = copy[state.lang].annotationDiscussionBody({
+    chapterLabel: meta.label,
+    chapterTitle: meta.title,
+    quote: (annotation.quote || "").trim(),
+    comment: annotation.comment,
+    url: pageUrl.toString(),
+  });
+
+  return { title, body };
+}
+
+async function openDiscussionForAnnotation(id) {
+  const annotation = state.annotations.find((item) => item.id === id);
+  if (!annotation) return;
+
+  const text = copy[state.lang];
+  const payload = annotationDiscussionPayload(annotation);
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error("Clipboard is unavailable.");
+    await navigator.clipboard.writeText(`${payload.title}\n\n${payload.body}`);
+    setAnnotationStatus(text.annotationCopied);
+  } catch {
+    setAnnotationStatus(text.annotationCopyFailed);
+  }
+
+  const url = `${DISCUSSION_NEW_URL}&title=${encodeURIComponent(payload.title)}`;
+  window.open(url, "_blank", "noopener");
 }
 
 function currentHashTarget() {
@@ -1485,6 +2061,11 @@ function resetMatrixProgress() {
 
 async function loadGuide(lang, shouldUpdateUrl = true) {
   state.lang = lang;
+  state.headings = [];
+  state.chapterTargets = [];
+  state.chapterSections = [];
+  state.annotations = readAnnotations(lang);
+  state.activeAnnotationId = null;
   setLanguageChrome(lang);
   renderPlanner();
   renderSchedulePlan();
@@ -1514,6 +2095,7 @@ async function loadGuide(lang, shouldUpdateUrl = true) {
   syncReaderHashToFocus();
   renderToc();
   observeHeadings();
+  renderAnnotations();
   updateReadingProgress();
   window.lucide?.createIcons();
 
@@ -1549,7 +2131,12 @@ function postProcessArticle() {
   const chapterPattern = state.lang === "zh" ? /^[一二三四五六七八九十]+、/ : /^\d+\.\s/;
   state.chapterTargets = state.headings
     .filter((heading) => heading.depth === 2 && chapterPattern.test(heading.text))
-    .slice(0, CHAPTER_COUNT);
+    .slice(0, CHAPTER_COUNT)
+    .map((heading, index) => ({
+      ...heading,
+      chapterIndex: index + 1,
+      chapterTitle: chapters[state.lang]?.[index]?.title || heading.text,
+    }));
 
   els.article.querySelectorAll("a[href]").forEach((link) => {
     const href = link.getAttribute("href");
@@ -1604,6 +2191,8 @@ function postProcessArticle() {
       };
     })
     .filter(Boolean);
+
+  assignAnnotatableBlocks();
 }
 
 function renderToc() {
@@ -1683,6 +2272,30 @@ function showError(error) {
 }
 
 document.addEventListener("click", (event) => {
+  const deleteAnnotationButton = event.target.closest("[data-delete-annotation]");
+  if (deleteAnnotationButton) {
+    deleteAnnotation(deleteAnnotationButton.dataset.deleteAnnotation);
+    return;
+  }
+
+  const discussAnnotationButton = event.target.closest("[data-discuss-annotation]");
+  if (discussAnnotationButton) {
+    openDiscussionForAnnotation(discussAnnotationButton.dataset.discussAnnotation);
+    return;
+  }
+
+  const annotationMark = event.target.closest(".annotation-mark[data-annotation-id]");
+  if (annotationMark) {
+    focusAnnotation(annotationMark.dataset.annotationId);
+    return;
+  }
+
+  const annotationCard = event.target.closest("[data-annotation-card][data-annotation-id]");
+  if (annotationCard && !event.target.closest("button, a")) {
+    focusAnnotation(annotationCard.dataset.annotationId);
+    return;
+  }
+
   const scheduleJump = event.target.closest("[data-schedule-jump]");
   if (scheduleJump) {
     const day = Number(scheduleJump.dataset.day);
@@ -1767,12 +2380,19 @@ els.resetAllButton.addEventListener("click", resetAllProgress);
 els.resetMatrix.addEventListener("click", resetMatrixProgress);
 els.search.addEventListener("input", renderToc);
 els.top.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+els.highlightButton.addEventListener("click", () => createAnnotation("highlight"));
+els.underlineButton.addEventListener("click", () => createAnnotation("underline"));
+els.commentButton.addEventListener("click", () => createAnnotation("comment"));
 window.addEventListener("scroll", updateReadingProgress, { passive: true });
 window.addEventListener("resize", () => {
   updateFixedChromeMetrics();
   updateReadingProgress();
 });
+window.addEventListener("load", updateFixedChromeMetrics);
 window.visualViewport?.addEventListener("resize", updateFixedChromeMetrics);
+if (document.fonts?.ready) {
+  document.fonts.ready.then(updateFixedChromeMetrics).catch(() => {});
+}
 
 if (window.ResizeObserver) {
   const fixedChromeObserver = new ResizeObserver(updateFixedChromeMetrics);
