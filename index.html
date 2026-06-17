@@ -19,12 +19,12 @@
     <meta name="twitter:card" content="summary" />
     <link rel="canonical" href="https://lling0000.github.io/Vibe_coding_guide/" />
     <title>Vibe Coding Guide | AI Coding 工程工作流手册</title>
-    <link rel="stylesheet" href="./assets/styles.css?v=20260617-a4-pdf-export" />
+    <link rel="stylesheet" href="./assets/styles.css?v=20260618-selection-popover" />
     <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/lucide@0.475.0/dist/umd/lucide.min.js"></script>
-    <script defer src="./assets/site.js?v=20260617-a4-pdf-export"></script>
+    <script defer src="./assets/site.js?v=20260618-selection-popover"></script>
   </head>
   <body data-mode="planner">
     <div class="site-progress" aria-hidden="true">
@@ -278,25 +278,25 @@
                 <h2 id="annotation-title">批注评论</h2>
               </div>
 
-              <div class="annotation-tools" aria-label="Annotation tools">
-                <button type="button" class="icon-button" id="highlight-button" title="高亮" aria-label="高亮">
-                  <i data-lucide="highlighter" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="icon-button" id="underline-button" title="下划线" aria-label="下划线">
-                  <i data-lucide="underline" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="icon-button" id="comment-button" title="评论" aria-label="评论">
-                  <i data-lucide="message-square-plus" aria-hidden="true"></i>
-                </button>
-              </div>
-
-              <div class="annotation-status" id="annotation-status" aria-live="polite"></div>
               <div class="annotation-list" id="annotation-list"></div>
             </aside>
           </div>
         </section>
       </section>
     </main>
+
+    <div class="annotation-popover" id="annotation-popover" role="toolbar" aria-label="批注工具" hidden>
+      <button type="button" class="icon-button" id="highlight-button" title="高亮" aria-label="高亮">
+        <i data-lucide="highlighter" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="icon-button" id="underline-button" title="下划线" aria-label="下划线">
+        <i data-lucide="underline" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="icon-button" id="comment-button" title="评论" aria-label="评论">
+        <i data-lucide="message-square-plus" aria-hidden="true"></i>
+      </button>
+    </div>
+    <div class="annotation-status" id="annotation-status" aria-live="polite"></div>
 
     <noscript>
       <main class="noscript">
