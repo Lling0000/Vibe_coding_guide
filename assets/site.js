@@ -282,7 +282,7 @@ const copy = {
     brandLine: "AI Coding 工程工作流手册",
     plannerMode: "学习清单",
     scheduleMode: "学习计划",
-    readerMode: "全文阅读",
+    readerMode: "章节阅读",
     navKicker: "Feynman Loop",
     navTitle: "19 章 · 36 天费曼间隔练习",
     navCopy: "每天一个新章，到期旧章按 2-3-5-7 间隔短复述。",
@@ -391,7 +391,7 @@ const copy = {
     brandLine: "AI coding engineering workflow",
     plannerMode: "Checklist",
     scheduleMode: "Plan",
-    readerMode: "Reader",
+    readerMode: "Chapter Reader",
     navKicker: "Feynman Loop",
     navTitle: "19 Chapters · 36-Day Feynman Spacing",
     navCopy: "One new chapter per day; due reviews return on a 2-3-5-7 cadence.",
@@ -923,6 +923,10 @@ function firstChapterForDay(day, lang = state.lang) {
   return schedule.newChapterIndex || schedule.reviews[0]?.chapterIndex || 1;
 }
 
+function defaultReaderChapter() {
+  return state.focusedChapterIndex || preferredChapter() || firstChapterForDay(state.day) || 1;
+}
+
 function slugify(text, index) {
   const normalized = text
     .trim()
@@ -1029,8 +1033,7 @@ function updateUrl() {
   } else {
     params.delete("chapter");
   }
-  const hash = state.mode === "reader" && state.focusedChapterIndex ? window.location.hash : "";
-  window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}${hash}`);
+  window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
 }
 
 function focusedChapterSection() {
@@ -2091,8 +2094,10 @@ async function loadGuide(lang, shouldUpdateUrl = true) {
   els.article.classList.remove("loading");
 
   postProcessArticle();
+  if (state.mode === "reader" && !state.focusedChapterIndex) {
+    state.focusedChapterIndex = defaultReaderChapter();
+  }
   applyReaderFocus();
-  syncReaderHashToFocus();
   renderToc();
   observeHeadings();
   renderAnnotations();
@@ -2101,13 +2106,7 @@ async function loadGuide(lang, shouldUpdateUrl = true) {
 
   updateReaderStatus();
 
-  if (shouldUpdateUrl) updateUrl();
-
-  if (state.mode === "reader" && window.location.hash.length > 1) {
-    window.setTimeout(() => {
-      document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ block: "start" });
-    }, 0);
-  }
+  if (shouldUpdateUrl || (state.mode === "reader" && state.focusedChapterIndex)) updateUrl();
 }
 
 function postProcessArticle() {
@@ -2257,9 +2256,8 @@ async function openChapter(chapterIndex) {
 
   setReaderFocus(chapterIndex);
   setMode("reader");
-  window.location.hash = target.id;
   window.setTimeout(() => {
-    target.element.scrollIntoView({ behavior: "smooth", block: "start" });
+    els.readerView.scrollIntoView({ behavior: "smooth", block: "start" });
   }, 40);
 }
 
@@ -2308,7 +2306,8 @@ document.addEventListener("click", (event) => {
   const modeButton = event.target.closest("button[data-mode]");
   if (modeButton) {
     if (modeButton.dataset.mode === "reader") {
-      setReaderFocus(null);
+      openChapter(defaultReaderChapter());
+      return;
     }
     setMode(modeButton.dataset.mode);
     return;
@@ -2402,7 +2401,7 @@ if (window.ResizeObserver) {
 state.lang = preferredLanguage();
 state.mode = preferredMode();
 state.day = preferredDay();
-state.focusedChapterIndex = state.mode === "reader" ? preferredChapter() : null;
+state.focusedChapterIndex = state.mode === "reader" ? preferredChapter() || firstChapterForDay(state.day) : null;
 setLanguageChrome(state.lang);
 renderPlanner();
 renderSchedulePlan();
