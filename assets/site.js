@@ -328,6 +328,7 @@ const copy = {
     search: "搜索章节",
     top: "顶部",
     readerKicker: "Engineering Field Guide",
+    chapterKicker: "章节片段",
     loading: "Loading guide...",
     loadError: "Could not load guide",
     pdf: "下载 PDF",
@@ -398,6 +399,7 @@ const copy = {
     search: "Search chapters",
     top: "Top",
     readerKicker: "Engineering Field Guide",
+    chapterKicker: "Chapter Focus",
     loading: "Loading guide...",
     loadError: "Could not load guide",
     pdf: "Download PDF",
@@ -510,6 +512,8 @@ const state = {
   day: 1,
   headings: [],
   chapterTargets: [],
+  chapterSections: [],
+  focusedChapterIndex: null,
   observer: null,
   guidePromise: null,
 };
@@ -585,6 +589,7 @@ const els = {
   readerKicker: document.querySelector("#reader-kicker"),
   readerTitle: document.querySelector("#reader-title"),
   readerSummary: document.querySelector("#reader-summary"),
+  readerMetrics: document.querySelector(".reader-metrics"),
   metricChapters: document.querySelector("#metric-chapters"),
   metricLanguages: document.querySelector("#metric-languages"),
   metricPdf: document.querySelector("#metric-pdf"),
@@ -618,6 +623,12 @@ function preferredDay() {
 
   const stored = Number(getStoredText("feynman:v4:last-day"));
   return Number.isInteger(stored) && stored >= 1 && stored <= PLAN_DAY_COUNT ? stored : 1;
+}
+
+function preferredChapter() {
+  const params = new URLSearchParams(window.location.search);
+  const requested = Number(params.get("chapter"));
+  return Number.isInteger(requested) && requested >= 1 && requested <= CHAPTER_COUNT ? requested : null;
 }
 
 function getStoredText(key) {
@@ -824,6 +835,7 @@ function setLanguageChrome(lang) {
   els.metricChapters.innerHTML = `<strong>${CHAPTER_COUNT}</strong> ${doc.metrics.chapters}`;
   els.metricLanguages.innerHTML = `<strong>2</strong> ${doc.metrics.languages}`;
   els.metricPdf.innerHTML = `<strong>PDF</strong> ${doc.metrics.pdf}`;
+  renderReaderHeader();
 
   els.langButtons.forEach((button) => {
     const isActive = button.dataset.lang === lang;
@@ -858,8 +870,104 @@ function updateUrl() {
   params.set("lang", state.lang);
   params.set("day", String(state.day));
   params.set("view", state.mode);
-  const hash = state.mode === "reader" ? window.location.hash : "";
+  if (state.mode === "reader" && state.focusedChapterIndex) {
+    params.set("chapter", String(state.focusedChapterIndex));
+  } else {
+    params.delete("chapter");
+  }
+  const hash = state.mode === "reader" && state.focusedChapterIndex ? window.location.hash : "";
   window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}${hash}`);
+}
+
+function focusedChapterSection() {
+  if (!state.focusedChapterIndex) return null;
+  return state.chapterSections[state.focusedChapterIndex - 1] || null;
+}
+
+function readerVisibleHeadings() {
+  const headings = state.headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+  const section = focusedChapterSection();
+  if (!section) return headings;
+
+  const nodes = new Set(section.nodes);
+  return headings.filter((heading) => nodes.has(heading.element));
+}
+
+function renderReaderHeader() {
+  const doc = docs[state.lang];
+  const text = copy[state.lang];
+  const section = focusedChapterSection();
+
+  if (section) {
+    const chapter = chapters[state.lang][section.chapterIndex - 1];
+    els.readerKicker.textContent = text.chapterKicker;
+    els.readerTitle.textContent = section.text;
+    els.readerSummary.textContent = chapter?.focus || doc.summary;
+    els.readerMetrics.hidden = true;
+    return;
+  }
+
+  els.readerKicker.textContent = text.readerKicker;
+  els.readerTitle.textContent = doc.title;
+  els.readerSummary.textContent = doc.summary;
+  els.readerMetrics.hidden = false;
+}
+
+function updateReaderStatus() {
+  const section = focusedChapterSection();
+  els.status.textContent = section
+    ? `${docs[state.lang].status} · ${section.text}`
+    : `${docs[state.lang].status} · ${state.chapterTargets.length} ${docs[state.lang].sections}`;
+}
+
+function applyReaderFocus() {
+  let section = focusedChapterSection();
+  if (state.focusedChapterIndex && !section) {
+    state.focusedChapterIndex = null;
+    section = null;
+  }
+
+  const visibleNodes = new Set(section?.nodes || []);
+  els.article.classList.toggle("is-chapter-focused", Boolean(section));
+  els.article.querySelectorAll(".is-focused-chapter-start").forEach((heading) => {
+    heading.classList.remove("is-focused-chapter-start");
+  });
+
+  [...els.article.children].forEach((node) => {
+    node.hidden = Boolean(section) && !visibleNodes.has(node);
+  });
+
+  if (section) {
+    section.element.classList.add("is-focused-chapter-start");
+  }
+
+  renderReaderHeader();
+  updateReaderStatus();
+}
+
+function setReaderFocus(chapterIndex) {
+  const next = Number(chapterIndex);
+  state.focusedChapterIndex = Number.isInteger(next) && next >= 1 && next <= CHAPTER_COUNT ? next : null;
+  applyReaderFocus();
+  renderToc();
+  observeHeadings();
+  updateReadingProgress();
+}
+
+function currentHashTarget() {
+  try {
+    return decodeURIComponent(window.location.hash.slice(1));
+  } catch {
+    return window.location.hash.slice(1);
+  }
+}
+
+function syncReaderHashToFocus() {
+  const section = focusedChapterSection();
+  if (state.mode !== "reader" || !section) return;
+  if (currentHashTarget() !== section.id) {
+    window.location.hash = section.id;
+  }
 }
 
 function getDayTaskDefs(day, lang = state.lang) {
@@ -1381,12 +1489,14 @@ async function loadGuide(lang, shouldUpdateUrl = true) {
   els.article.classList.remove("loading");
 
   postProcessArticle();
+  applyReaderFocus();
+  syncReaderHashToFocus();
   renderToc();
   observeHeadings();
   updateReadingProgress();
   window.lucide?.createIcons();
 
-  els.status.textContent = `${docs[lang].status} · ${state.chapterTargets.length} ${docs[lang].sections}`;
+  updateReaderStatus();
 
   if (shouldUpdateUrl) updateUrl();
 
@@ -1457,14 +1567,29 @@ function postProcessArticle() {
     });
     mermaid.run({ querySelector: ".mermaid" });
   }
+
+  const articleChildren = [...els.article.children];
+  state.chapterSections = state.chapterTargets
+    .map((target, index) => {
+      const start = articleChildren.indexOf(target.element);
+      const nextTarget = state.chapterTargets[index + 1];
+      const end = nextTarget ? articleChildren.indexOf(nextTarget.element) : articleChildren.length;
+      if (start < 0) return null;
+
+      return {
+        ...target,
+        chapterIndex: index + 1,
+        nodes: articleChildren.slice(start, end > start ? end : articleChildren.length),
+      };
+    })
+    .filter(Boolean);
 }
 
 function renderToc() {
   const query = els.search.value.trim().toLowerCase();
   els.toc.innerHTML = "";
 
-  state.headings
-    .filter((heading) => heading.depth === 2 || heading.depth === 3)
+  readerVisibleHeadings()
     .forEach((heading) => {
       const item = document.createElement("li");
       const link = document.createElement("a");
@@ -1502,7 +1627,7 @@ function observeHeadings() {
     },
   );
 
-  state.headings.forEach((heading) => state.observer.observe(heading.element));
+  readerVisibleHeadings().forEach((heading) => state.observer.observe(heading.element));
 }
 
 function updateReadingProgress() {
@@ -1517,11 +1642,11 @@ async function openChapter(chapterIndex) {
     await state.guidePromise.catch(() => {});
   }
 
-  setMode("reader");
-
   const target = state.chapterTargets[chapterIndex - 1];
   if (!target) return;
 
+  setReaderFocus(chapterIndex);
+  setMode("reader");
   window.location.hash = target.id;
   window.setTimeout(() => {
     target.element.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1548,6 +1673,9 @@ document.addEventListener("click", (event) => {
 
   const modeButton = event.target.closest("button[data-mode]");
   if (modeButton) {
+    if (modeButton.dataset.mode === "reader") {
+      setReaderFocus(null);
+    }
     setMode(modeButton.dataset.mode);
     return;
   }
@@ -1624,6 +1752,7 @@ window.addEventListener("resize", updateReadingProgress);
 state.lang = preferredLanguage();
 state.mode = preferredMode();
 state.day = preferredDay();
+state.focusedChapterIndex = state.mode === "reader" ? preferredChapter() : null;
 setLanguageChrome(state.lang);
 renderPlanner();
 renderSchedulePlan();

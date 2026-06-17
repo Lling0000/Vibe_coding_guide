@@ -1051,6 +1051,12 @@ button:disabled {
   scroll-margin-top: 5.4rem;
 }
 
+.prose.is-chapter-focused h2.is-focused-chapter-start {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
 .prose h1,
 .prose h2,
 .prose h3,
