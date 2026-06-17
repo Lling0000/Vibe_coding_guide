@@ -19,12 +19,12 @@
     <meta name="twitter:card" content="summary" />
     <link rel="canonical" href="https://lling0000.github.io/Vibe_coding_guide/" />
     <title>Vibe Coding Guide | AI Coding 工程工作流手册</title>
-    <link rel="stylesheet" href="./assets/styles.css?v=20260617-fixed-chrome" />
+    <link rel="stylesheet" href="./assets/styles.css?v=20260617-reader-annotations" />
     <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/lucide@0.475.0/dist/umd/lucide.min.js"></script>
-    <script defer src="./assets/site.js?v=20260617-fixed-chrome"></script>
+    <script defer src="./assets/site.js?v=20260617-reader-annotations"></script>
   </head>
   <body data-mode="planner">
     <div class="site-progress" aria-hidden="true">
@@ -244,7 +244,50 @@
             </button>
           </div>
 
-          <article id="guide-content" class="prose" aria-live="polite"></article>
+          <div class="reader-shell">
+            <div class="reader-column">
+              <article id="guide-content" class="prose" aria-live="polite"></article>
+
+              <nav class="chapter-pager" id="chapter-pager" aria-label="Chapter navigation">
+                <button type="button" class="chapter-page-button" id="prev-chapter-button">
+                  <i data-lucide="chevron-left" aria-hidden="true"></i>
+                  <span>
+                    <span class="chapter-page-kicker" id="prev-chapter-kicker">上一章</span>
+                    <strong id="prev-chapter-title">第 1 章</strong>
+                  </span>
+                </button>
+                <button type="button" class="chapter-page-button next" id="next-chapter-button">
+                  <span>
+                    <span class="chapter-page-kicker" id="next-chapter-kicker">下一章</span>
+                    <strong id="next-chapter-title">第 2 章</strong>
+                  </span>
+                  <i data-lucide="chevron-right" aria-hidden="true"></i>
+                </button>
+              </nav>
+            </div>
+
+            <aside class="annotation-panel" id="annotation-panel" aria-labelledby="annotation-title">
+              <div class="annotation-panel-head">
+                <p class="eyebrow" id="annotation-kicker">Reader Notes</p>
+                <h2 id="annotation-title">批注评论</h2>
+              </div>
+
+              <div class="annotation-tools" aria-label="Annotation tools">
+                <button type="button" class="icon-button" id="highlight-button" title="高亮" aria-label="高亮">
+                  <i data-lucide="highlighter" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="icon-button" id="underline-button" title="下划线" aria-label="下划线">
+                  <i data-lucide="underline" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="icon-button" id="comment-button" title="评论" aria-label="评论">
+                  <i data-lucide="message-square-plus" aria-hidden="true"></i>
+                </button>
+              </div>
+
+              <div class="annotation-status" id="annotation-status" aria-live="polite"></div>
+              <div class="annotation-list" id="annotation-list"></div>
+            </aside>
+          </div>
         </section>
       </section>
     </main>
