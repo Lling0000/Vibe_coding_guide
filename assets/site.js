@@ -6,7 +6,7 @@ const REVIEW_OFFSETS = REVIEW_INTERVALS.reduce((offsets, interval) => {
   return offsets;
 }, []);
 const PLAN_DAY_COUNT = CHAPTER_COUNT + REVIEW_OFFSETS.at(-1);
-const ANNOTATABLE_SELECTOR = "h2, h3, h4, p, li, blockquote, td, th";
+const ANNOTATABLE_SELECTOR = "h1, h2, h3, h4, h5, h6, p, li, blockquote, td, th, pre";
 const DISCUSSION_NEW_URL = "https://github.com/Lling0000/Vibe_coding_guide/discussions/new?category=q-a";
 const PDF_EXPORT_SCRIPTS = [
   "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js",
@@ -361,7 +361,7 @@ const copy = {
     annotationEmpty: "当前阅读范围还没有批注。",
     annotationNeedSelection: "先在正文里选中一段文字。",
     annotationOutside: "请选中正文里的文字。",
-    annotationSameBlock: "一次批注先选同一段落、标题或列表项里的文字。",
+    annotationSameBlock: "这段选择暂时无法转换成批注，请少选一点，或避开图表区域。",
     annotationCommentPrompt: "给这段文字添加评论：",
     annotationNoComment: "没有评论",
     annotationSaved: "批注已保存。",
@@ -473,7 +473,7 @@ const copy = {
     annotationEmpty: "No annotations in the current reading range yet.",
     annotationNeedSelection: "Select text in the guide first.",
     annotationOutside: "Please select text inside the guide.",
-    annotationSameBlock: "For now, keep one annotation inside the same paragraph, heading, or list item.",
+    annotationSameBlock: "This selection cannot be annotated yet. Try a shorter selection or avoid diagram areas.",
     annotationCommentPrompt: "Add a comment for this text:",
     annotationNoComment: "No comment",
     annotationSaved: "Annotation saved.",
@@ -1262,7 +1262,7 @@ function positionAnnotationPopover(range) {
 
   els.annotationPopover.classList.toggle("is-below", shouldPlaceBelow);
   els.annotationPopover.style.left = `${left}px`;
-  els.annotationPopover.style.top = `${Math.max(inset, top)}px`;
+  els.annotationPopover.style.top = `${Math.min(window.innerHeight - inset, Math.max(inset, top))}px`;
 }
 
 function updateAnnotationPopoverFromSelection() {
@@ -1293,6 +1293,95 @@ function annotationRangeForAction() {
   }
 
   return state.annotationRange ? state.annotationRange.cloneRange() : null;
+}
+
+function rangeIntersectsNode(range, node) {
+  try {
+    return range.intersectsNode(node);
+  } catch {
+    return false;
+  }
+}
+
+function textNodeSelectionOffsets(range, node) {
+  const length = node.textContent.length;
+  let start = 0;
+  let end = length;
+
+  if (node === range.startContainer) {
+    start = range.startOffset;
+  }
+  if (node === range.endContainer) {
+    end = range.endOffset;
+  }
+
+  return {
+    start: Math.max(0, Math.min(length, start)),
+    end: Math.max(0, Math.min(length, end)),
+  };
+}
+
+function segmentsFromRange(range) {
+  const grouped = new Map();
+  const walker = document.createTreeWalker(els.article, NodeFilter.SHOW_TEXT);
+
+  while (walker.nextNode()) {
+    const node = walker.currentNode;
+    if (!node.textContent || !rangeIntersectsNode(range, node)) continue;
+
+    const block = findAnnotationBlock(node);
+    if (!block?.dataset.blockId) continue;
+
+    const { start, end } = textNodeSelectionOffsets(range, node);
+    if (end <= start || !node.textContent.slice(start, end).trim()) continue;
+
+    const startOffset = offsetInBlock(block, node, start);
+    const endOffset = offsetInBlock(block, node, end);
+    const chapterIndex = Number(block.dataset.chapterIndex);
+    if (startOffset < 0 || endOffset <= startOffset || !Number.isInteger(chapterIndex)) continue;
+
+    const key = block.dataset.blockId;
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.startOffset = Math.min(existing.startOffset, startOffset);
+      existing.endOffset = Math.max(existing.endOffset, endOffset);
+    } else {
+      grouped.set(key, {
+        block,
+        blockId: key,
+        chapterIndex,
+        startOffset,
+        endOffset,
+      });
+    }
+  }
+
+  return [...grouped.values()]
+    .map((segment) => ({
+      ...segment,
+      quote: segment.block.textContent.slice(segment.startOffset, segment.endOffset),
+    }))
+    .filter((segment) => segment.quote.trim());
+}
+
+function storedAnnotationSegments(segments) {
+  return segments.map(({ block, ...segment }) => segment);
+}
+
+function annotationSegments(annotation) {
+  if (Array.isArray(annotation.segments) && annotation.segments.length) {
+    return annotation.segments;
+  }
+
+  return [
+    {
+      blockId: annotation.blockId,
+      chapterIndex: annotation.chapterIndex,
+      startOffset: annotation.startOffset,
+      endOffset: annotation.endOffset,
+      quote: annotation.quote,
+    },
+  ];
 }
 
 function annotationStyleLabel(style) {
@@ -1328,7 +1417,7 @@ function collectAnnotatableBlocks(section = null) {
     });
   });
 
-  return blocks.filter((block) => els.article.contains(block) && !block.closest("pre, .mermaid"));
+  return blocks.filter((block) => els.article.contains(block) && !block.closest(".mermaid"));
 }
 
 function assignAnnotatableBlocks() {
@@ -1343,7 +1432,7 @@ function assignAnnotatableBlocks() {
 function findAnnotationBlock(node) {
   const element = node?.nodeType === Node.TEXT_NODE ? node.parentElement : node;
   if (!element || !els.article.contains(element)) return null;
-  if (element.closest("pre, .mermaid")) return null;
+  if (element.closest(".mermaid")) return null;
 
   const block = element.closest(ANNOTATABLE_SELECTOR);
   return block && els.article.contains(block) ? block : null;
@@ -1408,18 +1497,18 @@ function rangeFromOffsets(block, startOffset, endOffset) {
   return null;
 }
 
-function locateAnnotation(annotation) {
-  const quote = annotation.quote || "";
+function locateAnnotationSegment(annotation, segment) {
+  const quote = segment.quote || "";
   const trimmedQuote = quote.trim();
-  const block = annotation.blockId
-    ? els.article.querySelector(`[data-block-id="${cssEscape(annotation.blockId)}"]`)
+  const block = segment.blockId
+    ? els.article.querySelector(`[data-block-id="${cssEscape(segment.blockId)}"]`)
     : null;
 
   function locateInBlock(candidate) {
     if (!candidate) return null;
     const text = candidate.textContent || "";
-    const start = Number(annotation.startOffset);
-    const end = Number(annotation.endOffset);
+    const start = Number(segment.startOffset);
+    const end = Number(segment.endOffset);
 
     if (Number.isFinite(start) && Number.isFinite(end) && text.slice(start, end) === quote) {
       return { block: candidate, startOffset: start, endOffset: end };
@@ -1445,7 +1534,8 @@ function locateAnnotation(annotation) {
   const direct = locateInBlock(block);
   if (direct) return direct;
 
-  const section = state.chapterSections[annotation.chapterIndex - 1] || null;
+  const sectionIndex = Number(segment.chapterIndex) || Number(annotation.chapterIndex);
+  const section = state.chapterSections[sectionIndex - 1] || null;
   for (const candidate of collectAnnotatableBlocks(section)) {
     const located = locateInBlock(candidate);
     if (located) return located;
@@ -1454,8 +1544,8 @@ function locateAnnotation(annotation) {
   return null;
 }
 
-function applyAnnotationMark(annotation) {
-  const located = locateAnnotation(annotation);
+function applyAnnotationMark(annotation, segment) {
+  const located = locateAnnotationSegment(annotation, segment);
   if (!located) return false;
 
   const range = rangeFromOffsets(located.block, located.startOffset, located.endOffset);
@@ -1546,12 +1636,18 @@ function renderAnnotations() {
   if (!els.article || els.article.classList.contains("loading")) return;
 
   clearAnnotationMarks();
-  [...state.annotations]
+  const markSegments = state.annotations.flatMap((annotation) =>
+    annotationSegments(annotation).map((segment) => ({ annotation, segment })),
+  );
+
+  markSegments
     .sort((a, b) => {
-      if (a.blockId === b.blockId) return Number(b.startOffset) - Number(a.startOffset);
-      return String(a.blockId).localeCompare(String(b.blockId));
+      if (a.segment.blockId === b.segment.blockId) {
+        return Number(b.segment.startOffset) - Number(a.segment.startOffset);
+      }
+      return String(a.segment.blockId).localeCompare(String(b.segment.blockId));
     })
-    .forEach(applyAnnotationMark);
+    .forEach(({ annotation, segment }) => applyAnnotationMark(annotation, segment));
   renderAnnotationList();
 }
 
@@ -1568,21 +1664,13 @@ function createAnnotation(style) {
     return;
   }
 
-  const startBlock = findAnnotationBlock(range.startContainer);
-  const endBlock = findAnnotationBlock(range.endContainer);
-  if (!startBlock || !endBlock || startBlock !== endBlock) {
+  const segments = segmentsFromRange(range);
+  if (!segments.length) {
     setAnnotationStatus(text.annotationSameBlock);
     return;
   }
 
-  const startOffset = offsetInBlock(startBlock, range.startContainer, range.startOffset);
-  const endOffset = offsetInBlock(startBlock, range.endContainer, range.endOffset);
-  if (startOffset < 0 || endOffset <= startOffset) {
-    setAnnotationStatus(text.annotationNeedSelection);
-    return;
-  }
-
-  const quote = startBlock.textContent.slice(startOffset, endOffset);
+  const quote = segments.map((segment) => segment.quote.trim()).filter(Boolean).join("\n\n");
   if (!quote.trim()) {
     setAnnotationStatus(text.annotationNeedSelection);
     return;
@@ -1595,7 +1683,8 @@ function createAnnotation(style) {
     comment = entered.trim();
   }
 
-  const chapterIndex = Number(startBlock.dataset.chapterIndex);
+  const firstSegment = segments[0];
+  const chapterIndex = Number(firstSegment.chapterIndex);
   if (!Number.isInteger(chapterIndex) || chapterIndex < 1) {
     setAnnotationStatus(text.annotationOutside);
     return;
@@ -1605,11 +1694,12 @@ function createAnnotation(style) {
     id: annotationId(),
     lang: state.lang,
     chapterIndex,
-    blockId: startBlock.dataset.blockId,
+    blockId: firstSegment.blockId,
     style,
     quote,
-    startOffset,
-    endOffset,
+    startOffset: firstSegment.startOffset,
+    endOffset: firstSegment.endOffset,
+    segments: storedAnnotationSegments(segments),
     comment,
     createdAt: new Date().toISOString(),
   };
@@ -2754,6 +2844,8 @@ els.resetMatrix.addEventListener("click", resetMatrixProgress);
 els.search.addEventListener("input", renderToc);
 els.top.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 els.annotationPopover.addEventListener("mousedown", (event) => event.preventDefault());
+els.annotationPopover.addEventListener("pointerdown", (event) => event.preventDefault());
+els.annotationPopover.addEventListener("touchstart", (event) => event.preventDefault());
 els.annotationPopover.addEventListener("click", (event) => event.stopPropagation());
 els.highlightButton.addEventListener("click", () => createAnnotation("highlight"));
 els.underlineButton.addEventListener("click", () => createAnnotation("underline"));
