@@ -674,6 +674,13 @@ button:disabled {
   align-items: end;
 }
 
+.matrix-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: flex-end;
+}
+
 .section-heading h2 {
   margin: 0;
   font-size: clamp(1.4rem, 2.4vw, 2rem);
@@ -1721,5 +1728,141 @@ button:disabled {
 
   .scope-chip {
     min-height: 8.5rem;
+  }
+}
+
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
+@media print {
+  body[data-print-mode="schedule"] {
+    width: auto;
+    min-width: 0;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000;
+  }
+
+  body[data-print-mode="schedule"] .site-progress,
+  body[data-print-mode="schedule"] .topbar,
+  body[data-print-mode="schedule"] .sidebar,
+  body[data-print-mode="schedule"] .planner-view,
+  body[data-print-mode="schedule"] .reader-view,
+  body[data-print-mode="schedule"] .schedule-hero,
+  body[data-print-mode="schedule"] .matrix-actions,
+  body[data-print-mode="schedule"] .noscript {
+    display: none !important;
+  }
+
+  body[data-print-mode="schedule"] .app-shell,
+  body[data-print-mode="schedule"] .workspace,
+  body[data-print-mode="schedule"] .schedule-view {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body[data-print-mode="schedule"] .schedule-view[hidden] {
+    display: block !important;
+  }
+
+  body[data-print-mode="schedule"] .matrix-section,
+  body[data-print-mode="schedule"] .schedule-view .matrix-section {
+    display: block !important;
+    padding: 0 !important;
+    border: 0 !important;
+  }
+
+  body[data-print-mode="schedule"] .section-heading {
+    margin: 0 0 6mm;
+  }
+
+  body[data-print-mode="schedule"] .section-heading h2 {
+    color: #000;
+    font-size: 16pt;
+  }
+
+  body[data-print-mode="schedule"] .section-heading .eyebrow {
+    color: #000;
+    font-size: 8pt;
+  }
+
+  body[data-print-mode="schedule"] .schedule-table-wrap {
+    overflow: visible !important;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+  }
+
+  body[data-print-mode="schedule"] .schedule-table {
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+
+  body[data-print-mode="schedule"] .schedule-table thead th:first-child,
+  body[data-print-mode="schedule"] .schedule-table tbody th {
+    position: static;
+  }
+
+  body[data-print-mode="schedule"] .schedule-table th,
+  body[data-print-mode="schedule"] .schedule-table td {
+    min-width: 0;
+    height: auto;
+    padding: 3.2pt;
+    border: 0.8pt solid #000;
+    background: #fff !important;
+    color: #000;
+    font-size: 7.2pt;
+    line-height: 1.25;
+  }
+
+  body[data-print-mode="schedule"] .schedule-table thead th {
+    font-size: 7.5pt;
+  }
+
+  body[data-print-mode="schedule"] .schedule-table tbody th {
+    width: auto;
+  }
+
+  body[data-print-mode="schedule"] .schedule-cell {
+    display: inline-flex;
+    gap: 2pt;
+  }
+
+  body[data-print-mode="schedule"] .schedule-day-link,
+  body[data-print-mode="schedule"] .schedule-cell-link {
+    color: #000;
+    text-decoration: none;
+  }
+
+  body[data-print-mode="schedule"] .schedule-check {
+    width: 8pt;
+    height: 8pt;
+  }
+
+  body[data-print-mode="schedule"] .schedule-check-mark {
+    width: 8pt;
+    height: 8pt;
+    border: 0.8pt solid #000;
+    border-radius: 1pt;
+  }
+
+  body[data-print-mode="schedule"] .schedule-check input:checked + .schedule-check-mark {
+    border-color: #000;
+    background: #fff;
+    box-shadow: none;
+  }
+
+  body[data-print-mode="schedule"] .schedule-check input:checked + .schedule-check-mark::after {
+    color: #000;
+    font-size: 7pt;
   }
 }

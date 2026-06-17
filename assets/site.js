@@ -312,6 +312,8 @@ const copy = {
     scheduleOpenDay: "回到今日清单",
     matrixKicker: "Schedule Table",
     matrixTitle: "间隔学习总表",
+    exportMatrixPdf: "导出 PDF",
+    exportMatrixPdfTitle: "Vibe Coding Guide · 36 天学习计划",
     resetMatrix: "清空表格勾选",
     resetMatrixConfirm: "确定要清空总表里的所有勾选吗?",
     matrixDay: "天",
@@ -421,6 +423,8 @@ const copy = {
     scheduleOpenDay: "Today's checklist",
     matrixKicker: "Schedule Table",
     matrixTitle: "Spaced Learning Table",
+    exportMatrixPdf: "Export PDF",
+    exportMatrixPdfTitle: "Vibe Coding Guide · 36-Day Learning Plan",
     resetMatrix: "Clear table checks",
     resetMatrixConfirm: "Clear all table checks?",
     matrixDay: "Day",
@@ -647,6 +651,8 @@ const els = {
   matrixKicker: document.querySelector("#matrix-kicker"),
   matrixTitle: document.querySelector("#matrix-title"),
   matrixTable: document.querySelector("#schedule-table"),
+  exportMatrixPdf: document.querySelector("#export-matrix-pdf-button"),
+  exportMatrixPdfLabel: document.querySelector("#export-matrix-pdf-label"),
   resetMatrix: document.querySelector("#reset-matrix-button"),
   resetMatrixLabel: document.querySelector("#reset-matrix-label"),
   noteKicker: document.querySelector("#note-kicker"),
@@ -1714,6 +1720,9 @@ function renderSchedulePlan() {
   els.scheduleOpenDayLabel.textContent = text.scheduleOpenDay;
   els.matrixKicker.textContent = text.matrixKicker;
   els.matrixTitle.textContent = text.matrixTitle;
+  els.exportMatrixPdfLabel.textContent = text.exportMatrixPdf;
+  els.exportMatrixPdf.title = text.exportMatrixPdf;
+  els.exportMatrixPdf.setAttribute("aria-label", text.exportMatrixPdf);
   els.resetMatrixLabel.textContent = text.resetMatrix;
 
   renderScheduleTable();
@@ -2062,6 +2071,23 @@ function resetMatrixProgress() {
   renderSchedulePlan();
 }
 
+function exportSchedulePdf() {
+  const previousTitle = document.title;
+  document.body.dataset.printMode = "schedule";
+  document.title = copy[state.lang].exportMatrixPdfTitle;
+
+  window.addEventListener(
+    "afterprint",
+    () => {
+      delete document.body.dataset.printMode;
+      document.title = previousTitle;
+    },
+    { once: true },
+  );
+
+  window.requestAnimationFrame(() => window.print());
+}
+
 async function loadGuide(lang, shouldUpdateUrl = true) {
   state.lang = lang;
   state.headings = [];
@@ -2376,6 +2402,7 @@ els.nextDay.addEventListener("click", () => setDay(state.day + 1));
 els.openReader.addEventListener("click", () => openChapter(firstChapterForDay(state.day)));
 els.resetDay.addEventListener("click", () => resetDay(state.day));
 els.resetAllButton.addEventListener("click", resetAllProgress);
+els.exportMatrixPdf.addEventListener("click", exportSchedulePdf);
 els.resetMatrix.addEventListener("click", resetMatrixProgress);
 els.search.addEventListener("input", renderToc);
 els.top.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
