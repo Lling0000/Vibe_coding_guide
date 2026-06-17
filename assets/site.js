@@ -1,4 +1,11 @@
-const DAY_COUNT = 19;
+const CHAPTER_COUNT = 19;
+const REVIEW_INTERVALS = [2, 3, 5, 7];
+const REVIEW_OFFSETS = REVIEW_INTERVALS.reduce((offsets, interval) => {
+  const previous = offsets.at(-1) || 0;
+  offsets.push(previous + interval);
+  return offsets;
+}, []);
+const PLAN_DAY_COUNT = CHAPTER_COUNT + REVIEW_OFFSETS.at(-1);
 
 const docs = {
   zh: {
@@ -38,156 +45,232 @@ const chapters = {
     {
       title: "什么是 Vibe Coding?",
       focus: "理解你的角色从写每个字符，变成管理 Agent 的注意力、边界和验收。",
+      teachPrompt: "为什么 Vibe Coding 的核心不是写代码，而是管理 Agent 的注意力?",
+      applyPrompt: "把你当前项目的一项任务拆成 spec、context、review、verify 四步。",
     },
     {
       title: "Spec 是什么?为什么它是一切的起点?",
       focus: "把模糊愿望改写成背景、目标、非目标、方案和验收。",
+      teachPrompt: "什么样的 Spec 能让 Agent 少猜、少跑偏?",
+      applyPrompt: "为一个真实小功能写出背景、目标、非目标和验收标准。",
     },
     {
       title: "AGENTS.md / CLAUDE.md 里存什么?",
       focus: "把项目约定、命令、红线和坑沉淀成 Agent 可复用的上下文。",
+      teachPrompt: "AGENTS.md 应该保存哪些长期约定，哪些内容不该放进去?",
+      applyPrompt: "给一个真实项目补 5 条命令、红线或历史坑。",
     },
     {
       title: "冷启动:接手一个新项目怎么办?",
       focus: "在新项目或陌生项目里先建地图，再让 Agent 动手。",
+      teachPrompt: "冷启动时为什么要先建地图，再让 Agent 改代码?",
+      applyPrompt: "列出一个新仓库探索清单：入口、命令、风险和热身任务。",
     },
     {
       title: "上下文管理:压缩、切换、清零",
       focus: "判断什么时候继续、压缩、交接或重开，保护会话质量。",
+      teachPrompt: "什么时候应该压缩上下文、写 handoff，或者直接重开 session?",
+      applyPrompt: "写一份 handoff 或 blocker note 模板，并填一个真实例子。",
     },
     {
       title: "MCP:给 Agent 接上工具与外部上下文",
       focus: "用 MCP 把 GitHub、数据库、Sentry 等外部能力接入 Agent。",
+      teachPrompt: "MCP 解决了什么问题，又把哪些安全风险带进来了?",
+      applyPrompt: "给一个任务列出应该开启和关闭的 MCP server，并写出原因。",
     },
     {
       title: "Subagent 的使用",
       focus: "把独立问题交给子 Agent，用隔离上下文降低主线噪音。",
+      teachPrompt: "什么任务适合派给 subagent，什么任务不适合?",
+      applyPrompt: "把一个复杂任务拆成主线任务和两个 subagent 调研任务。",
     },
     {
       title: "Agent 协作模式与 Workflow",
       focus: "区分 workflow 和 autonomous agent，选择合适的协作模式。",
+      teachPrompt: "Workflow 和 autonomous agent 的根本区别是什么?",
+      applyPrompt: "为一个真实需求选择 chaining、routing 或 evaluator 等协作模式。",
     },
     {
       title: "仓库卫生与 Git Worktree",
       focus: "用 .gitignore 和 worktree 保护仓库并隔离多 Agent 并行。",
+      teachPrompt: "为什么 worktree 是多 Agent 并行的安全底座?",
+      applyPrompt: "画出三个并行 worktree 的目录、分支和各自允许改动范围。",
     },
     {
       title: "云端 / 后台 / 异步 Agent",
       focus: "用云端 Agent 和 loop engineering 做长周期、目标驱动的自动化。",
+      teachPrompt: "本地、云端、后台 Agent 分别适合什么类型的工作?",
+      applyPrompt: "写一个异步 Agent 派活 spec，包含范围、权限和验收标准。",
     },
     {
       title: "Skill 的创建",
       focus: "把反复做的任务沉淀成可调用、可迭代的工作流。",
+      teachPrompt: "Skill、AGENTS.md 和一次性 Spec 的边界分别是什么?",
+      applyPrompt: "把一个重复任务改写成 Skill 的触发条件、输入和步骤。",
     },
     {
       title: "系统提示词 vs User 提示词",
       focus: "把长期行为约束和一次性任务输入分层管理。",
+      teachPrompt: "system prompt 和 user prompt 应该分别承载什么?",
+      applyPrompt: "把一个混乱 prompt 拆成长期规则和本次任务两部分。",
     },
     {
       title: "CI/CD",
       focus: "用自动化验证、HTML artifact 审查和 review 给 Agent 产出加护栏。",
+      teachPrompt: "CI/CD 在 Agent 写代码的流程里应该拦住哪些问题?",
+      applyPrompt: "给一个项目列出最小 CI 检查和合并前人工 review checklist。",
     },
     {
       title: "Hooks:确定性护栏",
       focus: "在工具调用前后用脚本拦截危险操作，补 AGENTS.md 约束。",
+      teachPrompt: "Hooks 和 CI 的边界有什么不同?",
+      applyPrompt: "设计一个 preToolUse 或提交前 hook，明确它要拦什么。",
     },
     {
       title: "测试",
       focus: "既测试普通代码，也用 TDD 和 eval harness 测试 Agent 行为。",
+      teachPrompt: "为什么要同时测试普通代码和 Agent 行为?",
+      applyPrompt: "为一个 Agent 任务写 case、期望行为、失败信号和证据。",
     },
     {
       title: "安全:Prompt 注入与 Agent 权限",
       focus: "理解 lethal trifecta，最小化权限并配合 Hooks 与 CI。",
+      teachPrompt: "什么是 lethal trifecta，为什么它对 coding agent 特别危险?",
+      applyPrompt: "给你的工具权限做一次最小权限审计，列出需要降权的项。",
     },
     {
       title: "几个高阶心法",
       focus: "建立先听计划、频繁 commit、拒绝看起来对等操作习惯。",
+      teachPrompt: "哪些习惯能让你更像 Agent 指挥官，而不是被动验收者?",
+      applyPrompt: "挑一个自己的坏习惯，写成下次对 Agent 的开场约束。",
     },
     {
       title: "一个完整的工作流示例",
       focus: "把 spec、拆分、实现、验证、提交和交接串成完整闭环。",
+      teachPrompt: "从 spec 到提交，一个完整 Agent 工作流有哪些关口?",
+      applyPrompt: "按本章结构，把一个自己的小任务画成流程图或步骤表。",
     },
     {
       title: "常见反模式速查",
       focus: "识别会让 Agent 产出失控、难审、难回滚的习惯。",
+      teachPrompt: "哪些反模式最容易在你的日常 AI Coding 中出现?",
+      applyPrompt: "从反模式表里选 3 个，分别写出对应修正动作。",
     },
   ],
   en: [
     {
       title: "What Is Vibe Coding?",
       focus: "Shift from typing every character to directing agent attention, boundaries, and acceptance.",
+      teachPrompt: "Why is Vibe Coding about directing agent attention rather than simply writing code?",
+      applyPrompt: "Break one current project task into spec, context, review, and verification.",
     },
     {
       title: "Specs: The Starting Point",
       focus: "Turn vague wishes into background, goals, non-goals, plans, and acceptance checks.",
+      teachPrompt: "What makes a spec reduce guessing and drift?",
+      applyPrompt: "Write background, goals, non-goals, and acceptance checks for one real feature.",
     },
     {
       title: "What Goes Into AGENTS.md or CLAUDE.md",
       focus: "Capture project rules, commands, red lines, and pitfalls as durable agent context.",
+      teachPrompt: "What durable rules belong in AGENTS.md, and what should stay out?",
+      applyPrompt: "Add five commands, red lines, or historical pitfalls for a real project.",
     },
     {
       title: "Cold Starts: Joining or Creating a Project",
       focus: "Map the project before asking an agent to change it.",
+      teachPrompt: "Why should a cold start build a map before changing code?",
+      applyPrompt: "Draft a repository exploration checklist: entry points, commands, risks, warm-up task.",
     },
     {
       title: "Context Management",
       focus: "Decide when to continue, compress, hand off, or reset a session.",
+      teachPrompt: "When should you compact, write a handoff, or restart the session?",
+      applyPrompt: "Write a handoff or blocker-note template and fill it with one real example.",
     },
     {
       title: "MCP",
       focus: "Connect GitHub, databases, Sentry, and other external tools through MCP.",
+      teachPrompt: "What does MCP unlock, and what risks does it introduce?",
+      applyPrompt: "List which MCP servers should be enabled or disabled for one task, with reasons.",
     },
     {
       title: "Using Subagents",
       focus: "Delegate isolated questions while protecting the main thread from noise.",
+      teachPrompt: "Which tasks are good subagent work, and which should stay on the main thread?",
+      applyPrompt: "Split one complex task into a mainline task and two subagent research tasks.",
     },
     {
       title: "Agent Workflows and Collaboration Patterns",
       focus: "Separate workflows from autonomous agents and choose the right collaboration shape.",
+      teachPrompt: "What is the core difference between a workflow and an autonomous agent?",
+      applyPrompt: "Choose chaining, routing, evaluator, or another pattern for one real requirement.",
     },
     {
       title: "Repository Hygiene and Git Worktrees",
       focus: "Use .gitignore and worktrees to protect the repo and isolate parallel agent work.",
+      teachPrompt: "Why are worktrees the safety foundation for parallel agent work?",
+      applyPrompt: "Map three parallel worktrees with branches and allowed edit scopes.",
     },
     {
       title: "Cloud, Background, and Async Agents",
       focus: "Run cloud agents and loop engineering for long, goal-driven automation.",
+      teachPrompt: "What work belongs to local, cloud, and background agents respectively?",
+      applyPrompt: "Write an async-agent assignment spec with scope, permissions, and acceptance checks.",
     },
     {
       title: "Creating Skills",
       focus: "Turn repeated tasks into reusable, improvable workflows.",
+      teachPrompt: "Where are the boundaries between a skill, AGENTS.md, and a one-off spec?",
+      applyPrompt: "Turn one repeated task into a skill trigger, inputs, and steps.",
     },
     {
       title: "System Prompts vs User Prompts",
       focus: "Separate durable behavior constraints from one-time task input.",
+      teachPrompt: "What belongs in the system prompt versus the user prompt?",
+      applyPrompt: "Split a messy prompt into durable rules and the current task request.",
     },
     {
       title: "CI/CD for Agent-Written Code",
       focus: "Use automation, HTML artifact review, and review skills to guardrail agent output.",
+      teachPrompt: "What should CI/CD catch in an agent-written-code workflow?",
+      applyPrompt: "List minimal CI checks and a pre-merge human review checklist for one project.",
     },
     {
       title: "Hooks",
       focus: "Use deterministic scripts before and after tool calls to block unsafe actions.",
+      teachPrompt: "How are hooks different from CI?",
+      applyPrompt: "Design one preToolUse or pre-commit hook and state exactly what it blocks.",
     },
     {
       title: "Testing Code and Testing Agent Behavior",
       focus: "Test regular code and agent behavior with TDD and eval harnesses.",
+      teachPrompt: "Why do you need to test both code and agent behavior?",
+      applyPrompt: "Write one agent-behavior case with expected behavior, failure signals, and evidence.",
     },
     {
       title: "Security",
       focus: "Understand the lethal trifecta, minimize permissions, and pair with hooks and CI.",
+      teachPrompt: "What is the lethal trifecta, and why is it dangerous for coding agents?",
+      applyPrompt: "Audit your tool permissions and list the items that should be reduced.",
     },
     {
       title: "Advanced Principles",
       focus: "Build habits around plan-first work, frequent commits, and rejecting plausible guesses.",
+      teachPrompt: "Which habits make you an agent commander instead of a passive acceptor?",
+      applyPrompt: "Pick one bad habit and turn it into an opening instruction for your next agent task.",
     },
     {
       title: "A Complete Workflow Example",
       focus: "Connect spec, decomposition, implementation, verification, commit, and handoff.",
+      teachPrompt: "What checkpoints connect spec to commit in a complete agent workflow?",
+      applyPrompt: "Turn one small task of yours into a workflow diagram or step list.",
     },
     {
       title: "Anti-Patterns Checklist",
       focus: "Spot habits that make agent output hard to review, control, or recover.",
+      teachPrompt: "Which anti-patterns are most likely in your own AI coding routine?",
+      applyPrompt: "Pick three anti-patterns and write one corrective action for each.",
     },
   ],
 };
@@ -198,42 +281,44 @@ const copy = {
     plannerMode: "学习清单",
     readerMode: "全文阅读",
     navKicker: "Feynman Loop",
-    navTitle: "19 天工程清单",
-    navCopy: "每天复习旧章节，再把一章落到真实工作流。",
+    navTitle: "19 章 · 36 天费曼间隔练习",
+    navCopy: "每天一个新章，到期旧章按 2-3-5-7 间隔短复述。",
     sideProgress: "总进度",
     resetAll: "重置全部进度",
-    resetAllConfirm: "确定要清空 19 天的所有学习进度吗?",
-    plannerKicker: "Engineering Sprint",
-    dayTitle: (day) => `Day ${day}: 累计学到第 ${day} 部分`,
-    daySummary: (day) => {
-      if (day === 1) {
-        return "今天只学第一部分：先读懂，再用自己的话讲清楚，最后落到一个真实工作动作。";
-      }
-      const reviewRange = day === 2 ? "第 1 部分" : `第 1-${day - 1} 部分`;
-      return `今天复习${reviewRange}，并新增第 ${day} 部分。旧知识要讲得更短，新知识要讲得更清楚。`;
-    },
+    resetAllConfirm: "确定要清空整条学习路径的所有进度吗?",
+    plannerKicker: "Feynman Practice",
+    dayTitle: (day) => `Day ${day}: ${dayTitleText("zh", day)}`,
+    daySummary: (day) => daySummaryText("zh", day),
     prevDay: "前一天",
     nextDay: "下一天",
     openReader: "打开原文",
-    heroCaption: "Spec、上下文、审查、验证",
-    scopeStat: "今日范围",
+    heroCaption: "新学、复述、查漏、应用",
+    scopeStat: "今日安排",
     todayStat: "今日完成",
     overallStat: "总进度",
-    partSingular: "部分",
-    partPlural: "部分",
-    scopeKicker: "Cumulative Scope",
-    scopeTitle: "今天学习范围",
+    partSingular: "章",
+    partPlural: "章",
+    scopeKicker: "Spaced Practice",
+    scopeTitle: "今天的新学与复习",
     noteKicker: "Teach Back",
     noteTitle: "费曼讲解草稿",
     notePlaceholder: "我会这样向一个刚开始用 AI Coding 的朋友解释今天的内容...",
+    matrixKicker: "Schedule Table",
+    matrixTitle: "间隔学习总表",
+    resetMatrix: "清空表格勾选",
+    resetMatrixConfirm: "确定要清空总表里的所有勾选吗?",
+    matrixDay: "天",
+    matrixLearn: "新学",
+    matrixReview: (index) => `复习${index}`,
+    matrixItem: (chapterIndex) => `第${chapterIndex}章`,
     checklistKicker: "Daily List",
     checklistTitle: "今日任务清单",
     resetDay: "重置今天",
-    startGroup: "开场回忆",
-    finishGroup: "收尾沉淀",
-    chapterLabel: (index) => `Part ${String(index).padStart(2, "0")}`,
+    startGroup: "先说再读",
+    finishGroup: "查漏应用",
+    chapterLabel: (index) => `Chapter ${String(index).padStart(2, "0")}`,
     dayLabel: (day) => `Day ${day}`,
-    dayScope: (day) => (day === 1 ? "第 1 部分" : `1-${day} 部分`),
+    dayScope: (day) => scheduleLabel("zh", day),
     dayProgress: (done, total) => `${done}/${total}`,
     search: "搜索章节",
     top: "顶部",
@@ -243,58 +328,62 @@ const copy = {
     pdf: "下载 PDF",
     github: "GitHub 仓库",
     openChapter: "读原文章节",
-    kickoff: (day) => {
-      if (day === 1) return "不看正文，写下你对 Vibe Coding 的原始理解。";
-      const reviewRange = day === 2 ? "第 1 部分" : `第 1-${day - 1} 部分`;
-      return `不看正文，用 5 句话回忆${reviewRange}。`;
-    },
-    newPart: (day) => `把第 ${day} 部分当作今天的新知识入口，先说出你期待解决的问题。`,
-    explainGoal: "准备一个 3 分钟讲解：不用术语堆砌，只讲人、问题、动作和结果。",
-    finishSummary: (day) => `写下第 1-${day} 部分的一句话总解释。`,
-    finishAction: "把今天最有用的一点变成明天能直接执行的 checklist。",
-    finishQuestion: "记录一个还没讲顺的问题,明天复习时先处理它。",
+    kickoff: (day) => preReadTaskText("zh", day),
+    newPart: (day) => `打开第 ${day} 章前，写下一个和它相关的真实工作场景。`,
+    explainGoal: "读完后准备一个 3 分钟白话讲解：只讲问题、类比、步骤、例子。",
+    finishSummary: (day) => `把「${scheduleLabel("zh", day)}」各写成一句 if-then 规则。`,
+    finishAction: "从今天的新学或复习里选一个点，变成今天能执行的微动作。",
+    finishQuestion: "记录一个讲不顺的点，并回原文补一个证据。",
+    reviewLabel: (review) => `Review ${review.reviewNumber} · +${review.offset}d`,
+    reviewTitle: (review) => `间隔复习: ${review.chapter.title}`,
+    reviewFocus: (review) =>
+      `第 ${review.reviewNumber} 次复习：不重读整章，先复述，卡住才回原文。`,
+    scopeCount: (schedule) =>
+      `${schedule.newChapterIndex ? 1 : 0} 新 · ${schedule.reviews.length} 复`,
   },
   en: {
     brandLine: "AI coding engineering workflow",
     plannerMode: "Checklist",
     readerMode: "Reader",
     navKicker: "Feynman Loop",
-    navTitle: "19-Day Engineering Checklist",
-    navCopy: "Review previous parts, then apply one new chapter to real work.",
+    navTitle: "19 Chapters · 36-Day Feynman Spacing",
+    navCopy: "One new chapter per day; due reviews return on a 2-3-5-7 cadence.",
     sideProgress: "Overall",
     resetAll: "Reset all progress",
-    resetAllConfirm: "Clear all progress for the 19-day plan?",
-    plannerKicker: "Engineering Sprint",
-    dayTitle: (day) => `Day ${day}: cumulative study through Part ${day}`,
-    daySummary: (day) => {
-      if (day === 1) {
-        return "Study only Part 1 today: understand it, explain it plainly, then turn it into one real action.";
-      }
-      const reviewRange = day === 2 ? "Part 1" : `Parts 1-${day - 1}`;
-      return `Review ${reviewRange}, then add Part ${day}. Make old ideas shorter and the new idea clearer.`;
-    },
+    resetAllConfirm: "Clear all progress for this learning path?",
+    plannerKicker: "Feynman Practice",
+    dayTitle: (day) => `Day ${day}: ${dayTitleText("en", day)}`,
+    daySummary: (day) => daySummaryText("en", day),
     prevDay: "Previous",
     nextDay: "Next",
     openReader: "Open guide",
-    heroCaption: "Spec, context, review, verify",
-    scopeStat: "Scope",
+    heroCaption: "Learn, explain, repair, apply",
+    scopeStat: "Plan",
     todayStat: "Today",
     overallStat: "Overall",
-    partSingular: "part",
-    partPlural: "parts",
-    scopeKicker: "Cumulative Scope",
-    scopeTitle: "Today's Scope",
+    partSingular: "chapter",
+    partPlural: "chapters",
+    scopeKicker: "Spaced Practice",
+    scopeTitle: "New and Due Today",
     noteKicker: "Teach Back",
     noteTitle: "Feynman Draft",
     notePlaceholder: "I would explain today's material to a friend starting AI coding like this...",
+    matrixKicker: "Schedule Table",
+    matrixTitle: "Spaced Learning Table",
+    resetMatrix: "Clear table checks",
+    resetMatrixConfirm: "Clear all table checks?",
+    matrixDay: "Day",
+    matrixLearn: "Learn",
+    matrixReview: (index) => `Review ${index}`,
+    matrixItem: (chapterIndex) => `Ch. ${chapterIndex}`,
     checklistKicker: "Daily List",
     checklistTitle: "Today's Checklist",
     resetDay: "Reset today",
-    startGroup: "Recall",
-    finishGroup: "Make It Stick",
-    chapterLabel: (index) => `Part ${String(index).padStart(2, "0")}`,
+    startGroup: "Explain First",
+    finishGroup: "Repair and Apply",
+    chapterLabel: (index) => `Chapter ${String(index).padStart(2, "0")}`,
     dayLabel: (day) => `Day ${day}`,
-    dayScope: (day) => (day === 1 ? "Part 1" : `Parts 1-${day}`),
+    dayScope: (day) => scheduleLabel("en", day),
     dayProgress: (done, total) => `${done}/${total}`,
     search: "Search chapters",
     top: "Top",
@@ -304,28 +393,34 @@ const copy = {
     pdf: "Download PDF",
     github: "GitHub repository",
     openChapter: "Read chapter",
-    kickoff: (day) => {
-      if (day === 1) return "Without reading, write your current understanding of Vibe Coding.";
-      const reviewRange = day === 2 ? "Part 1" : `Parts 1-${day - 1}`;
-      return `Without reading, recall ${reviewRange} in five sentences.`;
-    },
-    newPart: (day) => `Treat Part ${day} as today's new idea and name the problem you expect it to solve.`,
-    explainGoal: "Prepare a 3-minute explanation with people, problems, actions, and outcomes instead of jargon.",
-    finishSummary: (day) => `Write one plain-language summary for Parts 1-${day}.`,
-    finishAction: "Turn the most useful idea into a checklist item you can use tomorrow.",
-    finishQuestion: "Record one question that still feels hard to explain.",
+    kickoff: (day) => preReadTaskText("en", day),
+    newPart: (day) => `Before opening Chapter ${day}, write one real work situation it should help with.`,
+    explainGoal: "After reading, prepare a 3-minute plain-language explanation: problem, analogy, steps, example.",
+    finishSummary: (day) => `Turn "${scheduleLabel("en", day)}" into one if-then rule each.`,
+    finishAction: "Choose one point from today's new or review work and turn it into a micro-action.",
+    finishQuestion: "Record one point that still feels hard to explain, then repair it from the guide.",
+    reviewLabel: (review) => `Review ${review.reviewNumber} · +${review.offset}d`,
+    reviewTitle: (review) => `Spaced review: ${review.chapter.title}`,
+    reviewFocus: (review) =>
+      `Review ${review.reviewNumber}: explain first, then reopen the guide only where you get stuck.`,
+    scopeCount: (schedule) =>
+      `${schedule.newChapterIndex ? 1 : 0} new · ${schedule.reviews.length} review`,
   },
 };
 
 const chapterTaskTemplates = {
   zh: [
     {
+      key: "predict",
+      text: (_chapter, index) => `不看原文，先用 3 句话说出你以为第 ${index} 章要解决的问题。`,
+    },
+    {
       key: "read",
-      text: (chapter) => `阅读或复习「${chapter.title}」，标出一个最贴近你工作场景的例子。`,
+      text: (chapter) => `阅读「${chapter.title}」，只标 3 个关键词或 1 个贴近工作的例子。`,
     },
     {
       key: "plain",
-      text: () => "合上教程，用 150 字或 3 分钟讲给刚入门的人听。",
+      text: (chapter) => `合上教程，用 150 字或 3 分钟回答: ${chapter.teachPrompt}`,
     },
     {
       key: "gap",
@@ -337,17 +432,21 @@ const chapterTaskTemplates = {
     },
     {
       key: "apply",
-      text: () => "写一个真实项目里的微行动,今天就能执行。",
+      text: (chapter) => `落地练习: ${chapter.applyPrompt}`,
     },
   ],
   en: [
     {
+      key: "predict",
+      text: (_chapter, index) => `Before reading, explain what problem Chapter ${index} probably solves in three sentences.`,
+    },
+    {
       key: "read",
-      text: (chapter) => `Read or review "${chapter.title}" and mark one example close to your work.`,
+      text: (chapter) => `Read "${chapter.title}" and mark only 3 keywords or 1 work-relevant example.`,
     },
     {
       key: "plain",
-      text: () => "Close the guide and explain it to a beginner in 150 words or 3 minutes.",
+      text: (chapter) => `Close the guide and answer in 150 words or 3 minutes: ${chapter.teachPrompt}`,
     },
     {
       key: "gap",
@@ -359,7 +458,38 @@ const chapterTaskTemplates = {
     },
     {
       key: "apply",
-      text: () => "Write one micro-action you can apply in a real project today.",
+      text: (chapter) => `Practice: ${chapter.applyPrompt}`,
+    },
+  ],
+};
+
+const reviewTaskTemplates = {
+  zh: [
+    {
+      key: "recall",
+      text: (review) => `不看原文，用 90 秒讲出「${review.chapter.title}」解决什么问题、怎么做。`,
+    },
+    {
+      key: "repair",
+      text: () => "对照原文，只修补一个忘掉或讲不顺的点。",
+    },
+    {
+      key: "connect",
+      text: (review) => `把这章和真实项目连起来: ${review.chapter.applyPrompt}`,
+    },
+  ],
+  en: [
+    {
+      key: "recall",
+      text: (review) => `Without reading, explain in 90 seconds what "${review.chapter.title}" solves and how.`,
+    },
+    {
+      key: "repair",
+      text: () => "Reopen the guide and repair only one forgotten or fuzzy point.",
+    },
+    {
+      key: "connect",
+      text: (review) => `Connect this chapter to a real project: ${review.chapter.applyPrompt}`,
     },
   ],
 };
@@ -416,6 +546,11 @@ const els = {
   scopeKicker: document.querySelector("#scope-kicker"),
   scopeTitle: document.querySelector("#scope-title"),
   scopeList: document.querySelector("#scope-list"),
+  matrixKicker: document.querySelector("#matrix-kicker"),
+  matrixTitle: document.querySelector("#matrix-title"),
+  matrixTable: document.querySelector("#schedule-table"),
+  resetMatrix: document.querySelector("#reset-matrix-button"),
+  resetMatrixLabel: document.querySelector("#reset-matrix-label"),
   noteKicker: document.querySelector("#note-kicker"),
   noteTitle: document.querySelector("#note-title"),
   note: document.querySelector("#explain-note"),
@@ -459,12 +594,12 @@ function preferredMode() {
 function preferredDay() {
   const params = new URLSearchParams(window.location.search);
   const requested = Number(params.get("day"));
-  if (Number.isInteger(requested) && requested >= 1 && requested <= DAY_COUNT) {
+  if (Number.isInteger(requested) && requested >= 1 && requested <= PLAN_DAY_COUNT) {
     return requested;
   }
 
-  const stored = Number(getStoredText("feynman:v2:last-day"));
-  return Number.isInteger(stored) && stored >= 1 && stored <= DAY_COUNT ? stored : 1;
+  const stored = Number(getStoredText("feynman:v4:last-day"));
+  return Number.isInteger(stored) && stored >= 1 && stored <= PLAN_DAY_COUNT ? stored : 1;
 }
 
 function getStoredText(key) {
@@ -504,11 +639,138 @@ function setChecked(key, checked) {
 }
 
 function taskId(day, scope, key) {
-  return `feynman:v2:day-${day}:${scope}:${key}`;
+  return `feynman:v4:day-${day}:${scope}:${key}`;
 }
 
 function noteId(day) {
-  return `feynman:v2:day-${day}:note`;
+  return `feynman:v4:day-${day}:note`;
+}
+
+function matrixId(day, type, chapterIndex, reviewNumber = 0) {
+  return `feynman:v4:matrix:day-${day}:${type}-${chapterIndex}-${reviewNumber}`;
+}
+
+function chapterTitle(lang, day) {
+  return chapters[lang]?.[day - 1]?.title || (lang === "zh" ? "间隔复习" : "Spaced Review");
+}
+
+function getDaySchedule(day, lang = state.lang) {
+  const newChapter = day <= CHAPTER_COUNT ? chapters[lang][day - 1] : null;
+  const reviews = [];
+
+  chapters[lang].forEach((chapter, index) => {
+    const chapterIndex = index + 1;
+    REVIEW_OFFSETS.forEach((offset, reviewIndex) => {
+      if (chapterIndex + offset !== day) return;
+
+      reviews.push({
+        chapter,
+        chapterIndex,
+        offset,
+        interval: REVIEW_INTERVALS[reviewIndex],
+        reviewNumber: reviewIndex + 1,
+      });
+    });
+  });
+
+  return {
+    day,
+    newChapter,
+    newChapterIndex: newChapter ? day : null,
+    reviews,
+  };
+}
+
+function scheduleLabel(lang, day) {
+  const schedule = getDaySchedule(day, lang);
+  const parts = [];
+
+  if (schedule.newChapterIndex) {
+    parts.push(lang === "zh" ? `新第 ${schedule.newChapterIndex} 章` : `New Ch. ${schedule.newChapterIndex}`);
+  }
+
+  if (schedule.reviews.length) {
+    const indices = schedule.reviews.map((review) => review.chapterIndex).join(lang === "zh" ? "、" : ", ");
+    parts.push(lang === "zh" ? `复第 ${indices} 章` : `Review Ch. ${indices}`);
+  }
+
+  return parts.join(" · ") || (lang === "zh" ? "间隔复习" : "Spaced review");
+}
+
+function dayTitleText(lang, day) {
+  const schedule = getDaySchedule(day, lang);
+  if (schedule.newChapterIndex) {
+    return lang === "zh" ? `新学第 ${schedule.newChapterIndex} 章` : `Learn Chapter ${schedule.newChapterIndex}`;
+  }
+  return lang === "zh" ? "间隔复习日" : "Spaced Review Day";
+}
+
+function daySummaryText(lang, day) {
+  const schedule = getDaySchedule(day, lang);
+  const reviewIndices = schedule.reviews.map((review) => review.chapterIndex);
+
+  if (lang === "zh") {
+    const newText = schedule.newChapterIndex
+      ? `新学第 ${schedule.newChapterIndex} 章「${schedule.newChapter.title}」`
+      : "不新增章节";
+    const reviewText = reviewIndices.length ? `到期复习第 ${reviewIndices.join("、")} 章` : "没有到期复习";
+    return `${newText}；${reviewText}。新章走完整费曼流程，复习章只做短复述、查漏和连接。`;
+  }
+
+  const newText = schedule.newChapterIndex
+    ? `Learn Chapter ${schedule.newChapterIndex}, "${schedule.newChapter.title}"`
+    : "No new chapter";
+  const reviewText = reviewIndices.length ? `review Chapter ${reviewIndices.join(", ")}` : "no due reviews";
+  return `${newText}; ${reviewText}. New chapters get the full Feynman loop; reviews stay short: explain, repair, connect.`;
+}
+
+function preReadTaskText(lang, day) {
+  const schedule = getDaySchedule(day, lang);
+  if (schedule.newChapterIndex) {
+    return lang === "zh"
+      ? `不看原文，先用 3 句话说出你以为「${schedule.newChapter.title}」要解决的问题。`
+      : `Before reading, explain what problem "${schedule.newChapter.title}" probably solves in three sentences.`;
+  }
+
+  return lang === "zh"
+    ? "不看原文，先把今天到期复习的每一章各讲 60 秒。"
+    : "Before opening the guide, explain each due review chapter for 60 seconds.";
+}
+
+function getScheduleMatrixItems(day, lang = state.lang) {
+  const schedule = getDaySchedule(day, lang);
+  const items = [];
+
+  if (schedule.newChapter) {
+    items.push({
+      type: "learn",
+      column: 0,
+      day,
+      chapter: schedule.newChapter,
+      chapterIndex: schedule.newChapterIndex,
+      reviewNumber: 0,
+      id: matrixId(day, "learn", schedule.newChapterIndex),
+    });
+  }
+
+  schedule.reviews.forEach((review) => {
+    items.push({
+      type: "review",
+      column: review.reviewNumber,
+      day,
+      chapter: review.chapter,
+      chapterIndex: review.chapterIndex,
+      reviewNumber: review.reviewNumber,
+      id: matrixId(day, "review", review.chapterIndex, review.reviewNumber),
+    });
+  });
+
+  return items;
+}
+
+function firstChapterForDay(day, lang = state.lang) {
+  const schedule = getDaySchedule(day, lang);
+  return schedule.newChapterIndex || schedule.reviews[0]?.chapterIndex || 1;
 }
 
 function slugify(text, index) {
@@ -540,7 +802,7 @@ function setLanguageChrome(lang) {
   els.readerKicker.textContent = text.readerKicker;
   els.readerTitle.textContent = doc.title;
   els.readerSummary.textContent = doc.summary;
-  els.metricChapters.innerHTML = `<strong>${DAY_COUNT}</strong> ${doc.metrics.chapters}`;
+  els.metricChapters.innerHTML = `<strong>${CHAPTER_COUNT}</strong> ${doc.metrics.chapters}`;
   els.metricLanguages.innerHTML = `<strong>2</strong> ${doc.metrics.languages}`;
   els.metricPdf.innerHTML = `<strong>PDF</strong> ${doc.metrics.pdf}`;
 
@@ -581,41 +843,39 @@ function updateUrl() {
 
 function getDayTaskDefs(day, lang = state.lang) {
   const text = copy[lang];
-  const dayChapters = chapters[lang].slice(0, day);
-  const defs = [
-    {
-      group: "start",
-      groupTitle: text.startGroup,
-      scope: "start",
-      key: "recall",
-      text: text.kickoff(day),
-    },
-    {
-      group: "start",
-      groupTitle: text.startGroup,
-      scope: "start",
-      key: "new-part",
-      text: text.newPart(day),
-    },
-    {
-      group: "start",
-      groupTitle: text.startGroup,
-      scope: "start",
-      key: "explain-goal",
-      text: text.explainGoal,
-    },
-  ];
+  const schedule = getDaySchedule(day, lang);
+  const defs = [];
 
-  dayChapters.forEach((chapter, index) => {
+  if (schedule.newChapter) {
+    const chapter = schedule.newChapter;
+    const index = schedule.newChapterIndex;
     chapterTaskTemplates[lang].forEach((task) => {
       defs.push({
-        group: `chapter-${index + 1}`,
+        group: `new-${index}`,
         groupTitle: chapter.title,
+        groupKicker: text.chapterLabel(index),
+        groupFocus: chapter.focus,
         chapter,
-        chapterIndex: index + 1,
-        scope: `chapter-${index + 1}`,
+        chapterIndex: index,
+        scope: `new-${index}`,
         key: task.key,
-        text: task.text(chapter, index + 1, day),
+        text: task.text(chapter, index, day),
+      });
+    });
+  }
+
+  schedule.reviews.forEach((review) => {
+    reviewTaskTemplates[lang].forEach((task) => {
+      defs.push({
+        group: `review-${review.chapterIndex}-${review.reviewNumber}`,
+        groupTitle: text.reviewTitle(review),
+        groupKicker: text.reviewLabel(review),
+        groupFocus: text.reviewFocus(review),
+        chapter: review.chapter,
+        chapterIndex: review.chapterIndex,
+        scope: `review-${review.chapterIndex}-${review.reviewNumber}`,
+        key: task.key,
+        text: task.text(review, day),
       });
     });
   });
@@ -664,7 +924,7 @@ function overallProgress() {
   let done = 0;
   let total = 0;
 
-  for (let day = 1; day <= DAY_COUNT; day += 1) {
+  for (let day = 1; day <= PLAN_DAY_COUNT; day += 1) {
     const progress = progressForDay(day);
     done += progress.done;
     total += progress.total;
@@ -679,7 +939,7 @@ function overallProgress() {
 
 function renderPlanner() {
   const text = copy[state.lang];
-  const currentChapters = chapters[state.lang].slice(0, state.day);
+  const schedule = getDaySchedule(state.day);
 
   els.plannerNavKicker.textContent = text.navKicker;
   els.plannerNavTitle.textContent = text.navTitle;
@@ -698,20 +958,22 @@ function renderPlanner() {
   els.overallStatLabel.textContent = text.overallStat;
   els.scopeKicker.textContent = text.scopeKicker;
   els.scopeTitle.textContent = text.scopeTitle;
+  els.matrixKicker.textContent = text.matrixKicker;
+  els.matrixTitle.textContent = text.matrixTitle;
+  els.resetMatrixLabel.textContent = text.resetMatrix;
   els.noteKicker.textContent = text.noteKicker;
   els.noteTitle.textContent = text.noteTitle;
   els.note.placeholder = text.notePlaceholder;
   els.checklistKicker.textContent = text.checklistKicker;
   els.checklistTitle.textContent = text.checklistTitle;
   els.resetDayLabel.textContent = text.resetDay;
-  els.scopeStatValue.textContent = `${currentChapters.length} ${
-    currentChapters.length === 1 ? text.partSingular : text.partPlural
-  }`;
+  els.scopeStatValue.textContent = text.scopeCount(schedule);
   els.prevDay.disabled = state.day === 1;
-  els.nextDay.disabled = state.day === DAY_COUNT;
+  els.nextDay.disabled = state.day === PLAN_DAY_COUNT;
   els.note.value = getStoredText(noteId(state.day));
 
   renderDayList();
+  renderScheduleTable();
   renderScope();
   renderChecklist();
   updatePlannerProgress();
@@ -722,7 +984,7 @@ function renderDayList() {
   const text = copy[state.lang];
   els.dayList.innerHTML = "";
 
-  for (let day = 1; day <= DAY_COUNT; day += 1) {
+  for (let day = 1; day <= PLAN_DAY_COUNT; day += 1) {
     const progress = progressForDay(day);
     const item = document.createElement("li");
     const button = document.createElement("button");
@@ -763,28 +1025,131 @@ function renderDayList() {
 
 function renderScope() {
   const text = copy[state.lang];
+  const schedule = getDaySchedule(state.day);
   els.scopeList.innerHTML = "";
 
-  chapters[state.lang].slice(0, state.day).forEach((chapter, index) => {
+  function appendScopeChip({ chapter, chapterIndex, label, focus }) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "scope-chip";
-    button.dataset.openChapter = String(index + 1);
+    button.dataset.openChapter = String(chapterIndex);
 
-    const label = document.createElement("span");
-    label.className = "scope-chip-label";
-    label.textContent = text.chapterLabel(index + 1);
+    const labelEl = document.createElement("span");
+    labelEl.className = "scope-chip-label";
+    labelEl.textContent = label;
 
     const title = document.createElement("strong");
     title.textContent = chapter.title;
 
-    const focus = document.createElement("span");
-    focus.className = "scope-chip-focus";
-    focus.textContent = chapter.focus;
+    const focusEl = document.createElement("span");
+    focusEl.className = "scope-chip-focus";
+    focusEl.textContent = focus;
 
-    button.append(label, title, focus);
+    button.append(labelEl, title, focusEl);
     els.scopeList.append(button);
+  }
+
+  if (schedule.newChapter) {
+    appendScopeChip({
+      chapter: schedule.newChapter,
+      chapterIndex: schedule.newChapterIndex,
+      label: text.chapterLabel(schedule.newChapterIndex),
+      focus: schedule.newChapter.focus,
+    });
+  }
+
+  schedule.reviews.forEach((review) => {
+    appendScopeChip({
+      chapter: review.chapter,
+      chapterIndex: review.chapterIndex,
+      label: text.reviewLabel(review),
+      focus: text.reviewFocus(review),
+    });
   });
+}
+
+function renderScheduleTable() {
+  const text = copy[state.lang];
+  const columns = [
+    { key: "day", label: text.matrixDay },
+    { key: "learn", label: text.matrixLearn },
+    ...REVIEW_INTERVALS.map((_, index) => ({
+      key: `review-${index + 1}`,
+      label: text.matrixReview(index + 1),
+    })),
+  ];
+
+  els.matrixTable.innerHTML = "";
+
+  const thead = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  columns.forEach((column) => {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = column.label;
+    headRow.append(th);
+  });
+  thead.append(headRow);
+
+  const tbody = document.createElement("tbody");
+  for (let day = 1; day <= PLAN_DAY_COUNT; day += 1) {
+    const row = document.createElement("tr");
+    row.classList.toggle("is-active", day === state.day);
+
+    const dayHeader = document.createElement("th");
+    dayHeader.scope = "row";
+    const dayButton = document.createElement("button");
+    dayButton.type = "button";
+    dayButton.className = "schedule-day-link";
+    dayButton.dataset.day = String(day);
+    dayButton.textContent = text.dayLabel(day);
+    dayHeader.append(dayButton);
+    row.append(dayHeader);
+
+    const itemsByColumn = new Map(getScheduleMatrixItems(day).map((item) => [item.column, item]));
+    for (let column = 0; column <= REVIEW_INTERVALS.length; column += 1) {
+      const cell = document.createElement("td");
+      const item = itemsByColumn.get(column);
+
+      if (item) {
+        const cellWrap = document.createElement("div");
+        cellWrap.className = "schedule-cell";
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "schedule-cell-link";
+        button.dataset.day = String(item.day);
+        button.dataset.openChapter = String(item.chapterIndex);
+        button.dataset.scheduleJump = "true";
+        button.title = item.chapter.title;
+        button.textContent = text.matrixItem(item.chapterIndex);
+
+        const label = document.createElement("label");
+        label.className = "schedule-check";
+        label.title = item.chapter.title;
+
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.checked = isChecked(item.id);
+        input.dataset.matrixId = item.id;
+
+        const mark = document.createElement("span");
+        mark.className = "schedule-check-mark";
+        mark.setAttribute("aria-hidden", "true");
+
+        label.append(input, mark);
+        cellWrap.append(button, label);
+        cell.append(cellWrap);
+        cell.classList.toggle("is-complete", input.checked);
+      }
+
+      row.append(cell);
+    }
+
+    tbody.append(row);
+  }
+
+  els.matrixTable.append(thead, tbody);
 }
 
 function renderChecklist() {
@@ -797,6 +1162,8 @@ function renderChecklist() {
     if (!groups.has(task.group)) {
       groups.set(task.group, {
         title: task.groupTitle,
+        kicker: task.groupKicker,
+        focus: task.groupFocus,
         chapter: task.chapter,
         chapterIndex: task.chapterIndex,
         tasks: [],
@@ -816,7 +1183,7 @@ function renderChecklist() {
     const headingWrap = document.createElement("div");
     const kicker = document.createElement("span");
     kicker.className = "task-group-kicker";
-    kicker.textContent = group.chapterIndex ? text.chapterLabel(group.chapterIndex) : group.title;
+    kicker.textContent = group.kicker || (group.chapterIndex ? text.chapterLabel(group.chapterIndex) : group.title);
 
     const title = document.createElement("h3");
     title.textContent = group.chapterIndex ? group.title : group.title;
@@ -841,10 +1208,10 @@ function renderChecklist() {
 
     header.append(headingWrap, meta);
 
-    if (group.chapter?.focus) {
+    if (group.focus || group.chapter?.focus) {
       const focus = document.createElement("p");
       focus.className = "task-group-focus";
-      focus.textContent = group.chapter.focus;
+      focus.textContent = group.focus || group.chapter.focus;
       card.append(header, focus);
     } else {
       card.append(header);
@@ -916,11 +1283,11 @@ function updatePlannerProgress() {
 }
 
 function setDay(day, shouldUpdateUrl = true) {
-  const next = Math.min(DAY_COUNT, Math.max(1, Number(day)));
+  const next = Math.min(PLAN_DAY_COUNT, Math.max(1, Number(day)));
   if (!Number.isInteger(next)) return;
 
   state.day = next;
-  setStoredText("feynman:v2:last-day", String(next));
+  setStoredText("feynman:v4:last-day", String(next));
   renderPlanner();
   if (shouldUpdateUrl) updateUrl();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -935,11 +1302,21 @@ function resetDay(day) {
 function resetAllProgress() {
   if (!window.confirm(copy[state.lang].resetAllConfirm)) return;
 
-  for (let day = 1; day <= DAY_COUNT; day += 1) {
+  for (let day = 1; day <= PLAN_DAY_COUNT; day += 1) {
     getDayTaskDefs(day).forEach((task) => removeStored(task.id));
+    getScheduleMatrixItems(day).forEach((item) => removeStored(item.id));
     removeStored(noteId(day));
   }
   renderPlanner();
+}
+
+function resetMatrixProgress() {
+  if (!window.confirm(copy[state.lang].resetMatrixConfirm)) return;
+
+  for (let day = 1; day <= PLAN_DAY_COUNT; day += 1) {
+    getScheduleMatrixItems(day).forEach((item) => removeStored(item.id));
+  }
+  renderScheduleTable();
 }
 
 async function loadGuide(lang, shouldUpdateUrl = true) {
@@ -1005,7 +1382,7 @@ function postProcessArticle() {
   const chapterPattern = state.lang === "zh" ? /^[一二三四五六七八九十]+、/ : /^\d+\.\s/;
   state.chapterTargets = state.headings
     .filter((heading) => heading.depth === 2 && chapterPattern.test(heading.text))
-    .slice(0, DAY_COUNT);
+    .slice(0, CHAPTER_COUNT);
 
   els.article.querySelectorAll("a[href]").forEach((link) => {
     const href = link.getAttribute("href");
@@ -1124,6 +1501,15 @@ function showError(error) {
 }
 
 document.addEventListener("click", (event) => {
+  const scheduleJump = event.target.closest("[data-schedule-jump]");
+  if (scheduleJump) {
+    const day = Number(scheduleJump.dataset.day);
+    const chapter = Number(scheduleJump.dataset.openChapter);
+    setDay(day);
+    openChapter(chapter);
+    return;
+  }
+
   const modeButton = event.target.closest("button[data-mode]");
   if (modeButton) {
     setMode(modeButton.dataset.mode);
@@ -1172,15 +1558,24 @@ els.checklist.addEventListener("change", (event) => {
   renderDayList();
 });
 
+els.matrixTable.addEventListener("change", (event) => {
+  const input = event.target.closest("input[type='checkbox'][data-matrix-id]");
+  if (!input) return;
+
+  setChecked(input.dataset.matrixId, input.checked);
+  input.closest("td")?.classList.toggle("is-complete", input.checked);
+});
+
 els.note.addEventListener("input", () => {
   setStoredText(noteId(state.day), els.note.value);
 });
 
 els.prevDay.addEventListener("click", () => setDay(state.day - 1));
 els.nextDay.addEventListener("click", () => setDay(state.day + 1));
-els.openReader.addEventListener("click", () => openChapter(state.day));
+els.openReader.addEventListener("click", () => openChapter(firstChapterForDay(state.day)));
 els.resetDay.addEventListener("click", () => resetDay(state.day));
 els.resetAllButton.addEventListener("click", resetAllProgress);
+els.resetMatrix.addEventListener("click", resetMatrixProgress);
 els.search.addEventListener("input", renderToc);
 els.top.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 window.addEventListener("scroll", updateReadingProgress, { passive: true });

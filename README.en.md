@@ -47,7 +47,7 @@ The goal is not to "let AI code for you." The goal is to become a stronger opera
 
 | If you are... | Start with | What you should do first |
 |---|---|---|
-| Trying the guide online before starring | [Interactive Tutorial Website](https://lling0000.github.io/Vibe_coding_guide/) | Open the website, start with Day 1, and follow the 19-day learning path |
+| Trying the guide online before starring | [Interactive Tutorial Website](https://lling0000.github.io/Vibe_coding_guide/) | Open the website, start with Day 1, and follow the 19-chapter, 36-day spaced learning path |
 | Reading in English | [vibe-coding-guide-en.md](./vibe-coding-guide-en.md) | Read chapters 1-5 before copying any workflow |
 | Reading in Chinese | [README.md](./README.md) | Use the Chinese entry page, then jump into the full guide |
 | Using Codex, Claude Code, Cursor, or Aider | Chapters 1-5 | Write one real spec and one project `AGENTS.md` / `CLAUDE.md` |
@@ -178,7 +178,7 @@ Vibe Coding works when this loop is explicit. Every phase should leave evidence 
 
 ## Project Status
 
-This is a documentation-first repository. The full bilingual guides and PDFs are already included, and the GitHub Pages tutorial website lets readers study the guide directly in the browser with a 19-day Feynman-style learning path and local progress tracking.
+This is a documentation-first repository. The full bilingual guides and PDFs are already included, and the GitHub Pages tutorial website lets readers study the guide directly in the browser with a 19-chapter, 36-day Feynman-style spaced learning path and local progress tracking.
 
 There is currently no package manager setup because the site is plain static HTML/CSS/JavaScript. The CI added here only checks repository-facing documentation links; it does not build or publish a package.
 
