@@ -279,6 +279,7 @@ const copy = {
   zh: {
     brandLine: "AI Coding 工程工作流手册",
     plannerMode: "学习清单",
+    scheduleMode: "学习计划",
     readerMode: "全文阅读",
     navKicker: "Feynman Loop",
     navTitle: "19 章 · 36 天费曼间隔练习",
@@ -303,6 +304,10 @@ const copy = {
     noteKicker: "Teach Back",
     noteTitle: "费曼讲解草稿",
     notePlaceholder: "我会这样向一个刚开始用 AI Coding 的朋友解释今天的内容...",
+    scheduleKicker: "Learning Plan",
+    scheduleTitle: "36 天学习计划",
+    scheduleSummary: "每天一个新章，到期旧章按 2-3-5-7 间隔短复述。",
+    scheduleOpenDay: "回到今日清单",
     matrixKicker: "Schedule Table",
     matrixTitle: "间隔学习总表",
     resetMatrix: "清空表格勾选",
@@ -344,6 +349,7 @@ const copy = {
   en: {
     brandLine: "AI coding engineering workflow",
     plannerMode: "Checklist",
+    scheduleMode: "Plan",
     readerMode: "Reader",
     navKicker: "Feynman Loop",
     navTitle: "19 Chapters · 36-Day Feynman Spacing",
@@ -368,6 +374,10 @@ const copy = {
     noteKicker: "Teach Back",
     noteTitle: "Feynman Draft",
     notePlaceholder: "I would explain today's material to a friend starting AI coding like this...",
+    scheduleKicker: "Learning Plan",
+    scheduleTitle: "36-Day Learning Plan",
+    scheduleSummary: "One new chapter per day; due reviews return on a 2-3-5-7 cadence.",
+    scheduleOpenDay: "Today's checklist",
     matrixKicker: "Schedule Table",
     matrixTitle: "Spaced Learning Table",
     resetMatrix: "Clear table checks",
@@ -508,12 +518,14 @@ const els = {
   body: document.body,
   brandLine: document.querySelector("#brand-line"),
   plannerModeLabel: document.querySelector("#planner-mode-label"),
+  scheduleModeLabel: document.querySelector("#schedule-mode-label"),
   readerModeLabel: document.querySelector("#reader-mode-label"),
   plannerView: document.querySelector("#planner-view"),
+  scheduleView: document.querySelector("#schedule-view"),
   readerView: document.querySelector("#reader-view"),
   plannerNav: document.querySelector("#planner-nav"),
   readerNav: document.querySelector("#reader-nav"),
-  modeButtons: [...document.querySelectorAll("button[data-mode]")],
+  modeButtons: [...document.querySelectorAll(".view-toggle button[data-mode]")],
   langButtons: [...document.querySelectorAll("button[data-lang]")],
   pdf: document.querySelector("#pdf-link"),
   plannerNavKicker: document.querySelector("#planner-nav-kicker"),
@@ -554,6 +566,10 @@ const els = {
   noteKicker: document.querySelector("#note-kicker"),
   noteTitle: document.querySelector("#note-title"),
   note: document.querySelector("#explain-note"),
+  scheduleKicker: document.querySelector("#schedule-kicker"),
+  scheduleTitle: document.querySelector("#schedule-title"),
+  scheduleSummary: document.querySelector("#schedule-summary"),
+  scheduleOpenDayLabel: document.querySelector("#schedule-open-day-label"),
   checklistKicker: document.querySelector("#checklist-kicker"),
   checklistTitle: document.querySelector("#checklist-title"),
   resetDay: document.querySelector("#reset-day-button"),
@@ -588,7 +604,9 @@ function preferredLanguage() {
 function preferredMode() {
   const params = new URLSearchParams(window.location.search);
   const requested = params.get("view") || params.get("mode");
-  return requested === "reader" || requested === "read" ? "reader" : "planner";
+  if (requested === "reader" || requested === "read") return "reader";
+  if (requested === "schedule" || requested === "plan") return "schedule";
+  return "planner";
 }
 
 function preferredDay() {
@@ -793,6 +811,7 @@ function setLanguageChrome(lang) {
   document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
   els.brandLine.textContent = text.brandLine;
   els.plannerModeLabel.textContent = text.plannerMode;
+  els.scheduleModeLabel.textContent = text.scheduleMode;
   els.readerModeLabel.textContent = text.readerMode;
   els.pdf.href = doc.pdf;
   els.pdf.title = text.pdf;
@@ -814,11 +833,13 @@ function setLanguageChrome(lang) {
 }
 
 function setMode(mode, shouldUpdateUrl = true) {
-  state.mode = mode === "reader" ? "reader" : "planner";
+  const modes = new Set(["planner", "schedule", "reader"]);
+  state.mode = modes.has(mode) ? mode : "planner";
   els.body.dataset.mode = state.mode;
   els.plannerView.hidden = state.mode !== "planner";
+  els.scheduleView.hidden = state.mode !== "schedule";
   els.readerView.hidden = state.mode !== "reader";
-  els.plannerNav.hidden = state.mode !== "planner";
+  els.plannerNav.hidden = state.mode === "reader";
   els.readerNav.hidden = state.mode !== "reader";
 
   els.modeButtons.forEach((button) => {
@@ -836,7 +857,7 @@ function updateUrl() {
   const params = new URLSearchParams(window.location.search);
   params.set("lang", state.lang);
   params.set("day", String(state.day));
-  params.set("view", state.mode === "reader" ? "reader" : "planner");
+  params.set("view", state.mode);
   const hash = state.mode === "reader" ? window.location.hash : "";
   window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}${hash}`);
 }
@@ -958,9 +979,6 @@ function renderPlanner() {
   els.overallStatLabel.textContent = text.overallStat;
   els.scopeKicker.textContent = text.scopeKicker;
   els.scopeTitle.textContent = text.scopeTitle;
-  els.matrixKicker.textContent = text.matrixKicker;
-  els.matrixTitle.textContent = text.matrixTitle;
-  els.resetMatrixLabel.textContent = text.resetMatrix;
   els.noteKicker.textContent = text.noteKicker;
   els.noteTitle.textContent = text.noteTitle;
   els.note.placeholder = text.notePlaceholder;
@@ -973,10 +991,24 @@ function renderPlanner() {
   els.note.value = getStoredText(noteId(state.day));
 
   renderDayList();
-  renderScheduleTable();
   renderScope();
   renderChecklist();
   updatePlannerProgress();
+  window.lucide?.createIcons();
+}
+
+function renderSchedulePlan() {
+  const text = copy[state.lang];
+
+  els.scheduleKicker.textContent = text.scheduleKicker;
+  els.scheduleTitle.textContent = text.scheduleTitle;
+  els.scheduleSummary.textContent = text.scheduleSummary;
+  els.scheduleOpenDayLabel.textContent = text.scheduleOpenDay;
+  els.matrixKicker.textContent = text.matrixKicker;
+  els.matrixTitle.textContent = text.matrixTitle;
+  els.resetMatrixLabel.textContent = text.resetMatrix;
+
+  renderScheduleTable();
   window.lucide?.createIcons();
 }
 
@@ -1289,6 +1321,7 @@ function setDay(day, shouldUpdateUrl = true) {
   state.day = next;
   setStoredText("feynman:v4:last-day", String(next));
   renderPlanner();
+  renderSchedulePlan();
   if (shouldUpdateUrl) updateUrl();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1297,6 +1330,7 @@ function resetDay(day) {
   getDayTaskDefs(day).forEach((task) => removeStored(task.id));
   removeStored(noteId(day));
   renderPlanner();
+  renderSchedulePlan();
 }
 
 function resetAllProgress() {
@@ -1308,6 +1342,7 @@ function resetAllProgress() {
     removeStored(noteId(day));
   }
   renderPlanner();
+  renderSchedulePlan();
 }
 
 function resetMatrixProgress() {
@@ -1316,13 +1351,14 @@ function resetMatrixProgress() {
   for (let day = 1; day <= PLAN_DAY_COUNT; day += 1) {
     getScheduleMatrixItems(day).forEach((item) => removeStored(item.id));
   }
-  renderScheduleTable();
+  renderSchedulePlan();
 }
 
 async function loadGuide(lang, shouldUpdateUrl = true) {
   state.lang = lang;
   setLanguageChrome(lang);
   renderPlanner();
+  renderSchedulePlan();
   els.article.classList.add("loading");
   els.article.innerHTML = copy[lang].loading;
   els.status.textContent = `${docs[lang].status} · loading`;
@@ -1527,7 +1563,11 @@ document.addEventListener("click", (event) => {
 
   const dayButton = event.target.closest("button[data-day]");
   if (dayButton) {
+    const isScheduleDay = Boolean(dayButton.closest("#schedule-table"));
     setDay(Number(dayButton.dataset.day));
+    if (isScheduleDay) {
+      setMode("planner");
+    }
     return;
   }
 
@@ -1586,5 +1626,6 @@ state.mode = preferredMode();
 state.day = preferredDay();
 setLanguageChrome(state.lang);
 renderPlanner();
+renderSchedulePlan();
 setMode(state.mode, false);
 state.guidePromise = loadGuide(state.lang, false).catch(showError);
