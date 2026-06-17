@@ -20,6 +20,8 @@
   --code-ink: #eef6f7;
   --shadow: 0 18px 46px rgb(29 37 40 / 10%);
   --sidebar: clamp(17rem, 24vw, 21rem);
+  --topbar-offset: 4.4rem;
+  --sidebar-offset: 0px;
   --content: 66rem;
   --reader-content: 55rem;
   --radius: 8px;
@@ -38,6 +40,7 @@ html {
 body {
   margin: 0;
   min-width: 320px;
+  padding-top: var(--topbar-offset);
   overflow-x: hidden;
   background:
     linear-gradient(180deg, rgb(15 118 110 / 8%), transparent 28rem),
@@ -85,9 +88,9 @@ button:disabled {
 }
 
 .topbar {
-  position: sticky;
-  top: 0;
-  z-index: 30;
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -247,16 +250,17 @@ button:disabled {
 .app-shell {
   display: grid;
   grid-template-columns: var(--sidebar) minmax(0, 1fr);
-  min-height: calc(100vh - 4.4rem);
+  min-height: calc(100dvh - var(--topbar-offset));
 }
 
 .sidebar {
   position: fixed;
-  top: 4.4rem;
+  top: var(--topbar-offset);
   bottom: 0;
   left: 0;
   z-index: 20;
   width: var(--sidebar);
+  height: calc(100dvh - var(--topbar-offset));
   overflow: hidden;
   border-right: 1px solid var(--line);
   background: rgb(255 255 255 / 72%);
@@ -1059,7 +1063,7 @@ button:disabled {
 }
 
 .prose :target {
-  scroll-margin-top: 5.4rem;
+  scroll-margin-top: calc(var(--topbar-offset) + var(--sidebar-offset) + 1rem);
 }
 
 .prose.is-chapter-focused h2.is-focused-chapter-start {
@@ -1231,6 +1235,10 @@ button:disabled {
 }
 
 @media (max-width: 1040px) {
+  :root {
+    --topbar-offset: 7.25rem;
+  }
+
   .topbar {
     align-items: flex-start;
     flex-wrap: wrap;
@@ -1257,14 +1265,15 @@ button:disabled {
 
   .sidebar {
     position: fixed;
-    top: 4.4rem;
+    top: var(--topbar-offset);
     right: 0;
     bottom: auto;
     left: 0;
     z-index: 20;
     width: auto;
     height: auto;
-    overflow: visible;
+    max-height: calc(100dvh - var(--topbar-offset));
+    overflow: hidden;
     border-right: 0;
     border-bottom: 1px solid var(--line);
     background: rgb(246 250 248 / 95%);
@@ -1341,7 +1350,7 @@ button:disabled {
 
   .workspace {
     grid-column: auto;
-    padding-top: 6.9rem;
+    padding-top: calc(var(--sidebar-offset) + 1rem);
   }
 }
 
@@ -1357,6 +1366,10 @@ button:disabled {
 }
 
 @media (max-width: 640px) {
+  :root {
+    --topbar-offset: 7.7rem;
+  }
+
   .topbar {
     min-height: 6rem;
     padding: 0.7rem 0.85rem;
@@ -1396,12 +1409,8 @@ button:disabled {
     height: 2.2rem;
   }
 
-  .sidebar {
-    top: 6rem;
-  }
-
   .workspace {
-    padding-top: 7.1rem;
+    padding-top: calc(var(--sidebar-offset) + 0.9rem);
   }
 
   .learning-hero h1,

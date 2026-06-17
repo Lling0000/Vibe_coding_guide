@@ -520,6 +520,8 @@ const state = {
 
 const els = {
   body: document.body,
+  topbar: document.querySelector(".topbar"),
+  sidebar: document.querySelector(".sidebar"),
   brandLine: document.querySelector("#brand-line"),
   plannerModeLabel: document.querySelector("#planner-mode-label"),
   scheduleModeLabel: document.querySelector("#schedule-mode-label"),
@@ -842,6 +844,8 @@ function setLanguageChrome(lang) {
     button.classList.toggle("is-active", isActive);
     button.setAttribute("aria-pressed", String(isActive));
   });
+
+  updateFixedChromeMetrics();
 }
 
 function setMode(mode, shouldUpdateUrl = true) {
@@ -863,6 +867,23 @@ function setMode(mode, shouldUpdateUrl = true) {
   if (shouldUpdateUrl) updateUrl();
   updateReadingProgress();
   window.lucide?.createIcons();
+  updateFixedChromeMetrics();
+}
+
+function updateFixedChromeMetrics() {
+  window.requestAnimationFrame(() => {
+    const topbarHeight = Math.ceil(els.topbar?.getBoundingClientRect().height || 0);
+    const sidebarHeight = window.matchMedia("(max-width: 920px)").matches
+      ? Math.ceil(els.sidebar?.getBoundingClientRect().height || 0)
+      : 0;
+
+    if (topbarHeight > 0) {
+      document.documentElement.style.setProperty("--topbar-offset", `${topbarHeight}px`);
+    }
+    if (sidebarHeight > 0) {
+      document.documentElement.style.setProperty("--sidebar-offset", `${sidebarHeight}px`);
+    }
+  });
 }
 
 function updateUrl() {
@@ -1747,7 +1768,16 @@ els.resetMatrix.addEventListener("click", resetMatrixProgress);
 els.search.addEventListener("input", renderToc);
 els.top.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 window.addEventListener("scroll", updateReadingProgress, { passive: true });
-window.addEventListener("resize", updateReadingProgress);
+window.addEventListener("resize", () => {
+  updateFixedChromeMetrics();
+  updateReadingProgress();
+});
+window.visualViewport?.addEventListener("resize", updateFixedChromeMetrics);
+
+if (window.ResizeObserver) {
+  const fixedChromeObserver = new ResizeObserver(updateFixedChromeMetrics);
+  [els.topbar, els.sidebar].filter(Boolean).forEach((node) => fixedChromeObserver.observe(node));
+}
 
 state.lang = preferredLanguage();
 state.mode = preferredMode();
