@@ -5,22 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Vibe Coding Guide: a Feynman-style daily learning checklist and bilingual field guide for AI coding workflows."
+      content="Vibe Coding Guide: 中文优先的 AI Coding 工程工作流手册，包含中英教程、PDF 和 19 章费曼间隔学习清单。"
     />
     <meta name="theme-color" content="#f6faf8" />
-    <meta property="og:title" content="Vibe Coding Guide" />
+    <meta property="og:title" content="Vibe Coding Guide | AI Coding 工程工作流手册" />
     <meta
       property="og:description"
-      content="A 16-day Feynman learning plan for turning AI coding into repeatable engineering practice."
+      content="用 spec、上下文、subagent、worktree、skill、CI 和 review，把 AI Coding 变成可审查、可验证、可交付的工程循环。"
     />
     <meta property="og:type" content="website" />
-    <title>Vibe Coding Guide</title>
-    <link rel="stylesheet" href="./assets/styles.css?v=20260530" />
+    <meta property="og:url" content="https://lling0000.github.io/Vibe_coding_guide/" />
+    <meta property="og:site_name" content="Vibe Coding Guide" />
+    <meta name="twitter:card" content="summary" />
+    <link rel="canonical" href="https://lling0000.github.io/Vibe_coding_guide/" />
+    <title>Vibe Coding Guide | AI Coding 工程工作流手册</title>
+    <link rel="stylesheet" href="./assets/styles.css?v=20260617" />
     <script defer src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/lucide@0.475.0/dist/umd/lucide.min.js"></script>
-    <script defer src="./assets/site.js?v=20260530"></script>
+    <script defer src="./assets/site.js?v=20260617-spaced"></script>
   </head>
   <body data-mode="planner">
     <div class="site-progress" aria-hidden="true">
@@ -32,7 +36,7 @@
         <span class="brand-mark" aria-hidden="true">VC</span>
         <span class="brand-copy">
           <span class="brand-name">Vibe Coding Guide</span>
-          <span class="brand-line" id="brand-line">费曼式 AI Coding 学习路线</span>
+          <span class="brand-line" id="brand-line">AI Coding 工程工作流手册</span>
         </span>
       </a>
 
@@ -72,8 +76,8 @@
         <div class="sidebar-sticky planner-sidebar" id="planner-nav">
           <div class="side-heading">
             <p class="eyebrow" id="planner-nav-kicker">Feynman Loop</p>
-            <h2 id="planner-nav-title">16 天学习清单</h2>
-            <p id="planner-nav-copy">每天复习旧章节，再新增一章。</p>
+            <h2 id="planner-nav-title">19 章 · 36 天费曼间隔练习</h2>
+            <p id="planner-nav-copy">每天一个新章，到期旧章按 2-3-5-7 间隔短复述。</p>
           </div>
 
           <div class="side-stat" aria-label="Overall progress">
@@ -108,10 +112,10 @@
         <section class="planner-view" id="planner-view" aria-labelledby="planner-title">
           <div class="learning-hero">
             <div class="learning-hero-copy">
-              <p class="eyebrow" id="planner-kicker">Feynman Sprint</p>
-              <h1 id="planner-title">Day 1：累计学到第 1 部分</h1>
+              <p class="eyebrow" id="planner-kicker">Feynman Practice</p>
+              <h1 id="planner-title">Day 1：新学第 1 章</h1>
               <p id="planner-summary">
-                今天只学第一部分：先读懂，再用自己的话讲清楚，最后落到一个真实工作动作。
+                新章走完整费曼流程，复习章只做短复述、查漏和连接。
               </p>
 
               <div class="hero-actions">
@@ -138,8 +142,8 @@
 
           <div class="stats-grid" aria-label="Learning progress">
             <div class="stat-tile">
-              <span id="scope-stat-label">今日范围</span>
-              <strong id="scope-stat-value">1 part</strong>
+              <span id="scope-stat-label">今日安排</span>
+              <strong id="scope-stat-value">1 新 · 0 复</strong>
             </div>
             <div class="stat-tile">
               <span id="today-stat-label">今日完成</span>
@@ -153,10 +157,26 @@
             </div>
           </div>
 
+          <section class="matrix-section" aria-labelledby="matrix-title">
+            <div class="section-heading split">
+              <div>
+                <p class="eyebrow" id="matrix-kicker">Schedule Table</p>
+                <h2 id="matrix-title">间隔学习总表</h2>
+              </div>
+              <button type="button" class="text-button" id="reset-matrix-button">
+                <i data-lucide="eraser" aria-hidden="true"></i>
+                <span id="reset-matrix-label">清空表格勾选</span>
+              </button>
+            </div>
+            <div class="schedule-table-wrap">
+              <table class="schedule-table" id="schedule-table"></table>
+            </div>
+          </section>
+
           <section class="scope-section" aria-labelledby="scope-title">
             <div class="section-heading">
-              <p class="eyebrow" id="scope-kicker">Cumulative Scope</p>
-              <h2 id="scope-title">今天学习范围</h2>
+              <p class="eyebrow" id="scope-kicker">Spaced Practice</p>
+              <h2 id="scope-title">今天的新学与复习</h2>
             </div>
             <div class="scope-list" id="scope-list"></div>
           </section>
@@ -189,10 +209,10 @@
             <p class="eyebrow" id="reader-kicker">Field Guide</p>
             <h1 id="reader-title">把 AI Coding 变成可复用的工程工作流。</h1>
             <p class="reader-summary" id="reader-summary">
-              从 spec、上下文、subagent、worktree、skill，到 CI、测试和审查习惯，帮你把 Agent 产出的代码管得住、交得出。
+              这不是 prompt 话术合集，而是一套从 spec、上下文、subagent、worktree、skill 到 CI、测试和审查的工程操作手册。
             </p>
             <div class="reader-metrics" aria-label="Guide highlights">
-              <span id="metric-chapters"><strong>16</strong> 章</span>
+              <span id="metric-chapters"><strong>19</strong> 章</span>
               <span id="metric-languages"><strong>2</strong> 种语言</span>
               <span id="metric-pdf"><strong>PDF</strong> 已包含</span>
             </div>

@@ -32,11 +32,13 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
   background:
     linear-gradient(180deg, rgb(15 118 110 / 8%), transparent 28rem),
     linear-gradient(90deg, rgb(255 248 238 / 82%), transparent 36rem),
@@ -483,11 +485,13 @@ button:disabled {
 
 .workspace {
   min-width: 0;
+  max-width: 100%;
 }
 
 .planner-view,
 .reader-view {
   width: min(100%, calc(var(--content) + clamp(2rem, 7vw, 7rem)));
+  max-width: 100%;
   margin: 0 auto;
   padding: clamp(1rem, 3vw, 2.4rem) clamp(1rem, 4vw, 3.5rem) 5rem;
 }
@@ -501,6 +505,7 @@ button:disabled {
   grid-template-columns: minmax(0, 1.15fr) minmax(16rem, 0.85fr);
   gap: clamp(1.2rem, 4vw, 3rem);
   align-items: center;
+  max-width: 100%;
   padding: clamp(1rem, 3vw, 2rem) 0 clamp(1.25rem, 3vw, 2.25rem);
   border-bottom: 1px solid var(--line);
 }
@@ -539,6 +544,7 @@ button:disabled {
   position: relative;
   margin: 0;
   min-width: 0;
+  max-width: 100%;
 }
 
 .hero-visual img {
@@ -602,6 +608,7 @@ button:disabled {
   line-height: 1;
 }
 
+.matrix-section,
 .scope-section,
 .note-section,
 .checklist-section {
@@ -631,6 +638,138 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.72rem;
+}
+
+.schedule-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.schedule-table {
+  width: 100%;
+  min-width: 48rem;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.schedule-table th,
+.schedule-table td {
+  min-width: 7rem;
+  height: 4.2rem;
+  padding: 0.55rem;
+  border: 2px solid var(--ink);
+  background: #fff;
+  vertical-align: middle;
+}
+
+.schedule-table thead th {
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-size: 0.95rem;
+  font-weight: 850;
+  text-align: center;
+}
+
+.schedule-table tbody th {
+  width: 5.5rem;
+  background: #fff;
+  text-align: left;
+}
+
+.schedule-table thead th:first-child,
+.schedule-table tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.schedule-table thead th:first-child {
+  z-index: 2;
+}
+
+.schedule-table tr.is-active th,
+.schedule-table tr.is-active td {
+  background: rgb(216 237 232 / 44%);
+}
+
+.schedule-day-link,
+.schedule-cell-link {
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.schedule-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.schedule-cell-link {
+  color: var(--ink);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.schedule-cell-link:hover,
+.schedule-day-link:hover {
+  color: var(--accent-strong);
+}
+
+.schedule-check {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  place-items: center;
+  cursor: pointer;
+}
+
+.schedule-check input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+.schedule-check-mark {
+  display: grid;
+  width: 1.05rem;
+  height: 1.05rem;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.schedule-check input:checked + .schedule-check-mark {
+  border-color: #0f9f4a;
+  background: #18c45f;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 50%);
+}
+
+.schedule-check input:checked + .schedule-check-mark::after {
+  color: #fff;
+  content: "✓";
+  font-size: 0.86rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.schedule-table td.is-complete .schedule-cell-link {
+  font-weight: 850;
 }
 
 .scope-chip {
@@ -1212,11 +1351,11 @@ button:disabled {
 
   .hero-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .hero-actions .text-button:last-child {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .text-button {
@@ -1229,6 +1368,10 @@ button:disabled {
     width: 100%;
     margin-top: 0.5rem;
     max-width: none;
+  }
+
+  .hero-visual img {
+    object-fit: contain;
   }
 
   .section-heading.split,
@@ -1262,14 +1405,6 @@ button:disabled {
 }
 
 @media (max-width: 420px) {
-  .hero-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .hero-actions .text-button:last-child {
-    grid-column: auto;
-  }
-
   .day-button {
     width: 11rem;
   }
