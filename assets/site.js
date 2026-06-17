@@ -612,6 +612,8 @@ const state = {
   focusedChapterIndex: null,
   annotations: [],
   activeAnnotationId: null,
+  annotationRange: null,
+  annotationStatusTimer: null,
   observer: null,
   guidePromise: null,
 };
@@ -627,6 +629,7 @@ const els = {
   plannerView: document.querySelector("#planner-view"),
   scheduleView: document.querySelector("#schedule-view"),
   readerView: document.querySelector("#reader-view"),
+  readerShell: document.querySelector(".reader-shell"),
   plannerNav: document.querySelector("#planner-nav"),
   readerNav: document.querySelector("#reader-nav"),
   modeButtons: [...document.querySelectorAll(".view-toggle button[data-mode]")],
@@ -704,6 +707,7 @@ const els = {
   nextChapterTitle: document.querySelector("#next-chapter-title"),
   annotationKicker: document.querySelector("#annotation-kicker"),
   annotationTitle: document.querySelector("#annotation-title"),
+  annotationPopover: document.querySelector("#annotation-popover"),
   annotationStatus: document.querySelector("#annotation-status"),
   annotationList: document.querySelector("#annotation-list"),
   highlightButton: document.querySelector("#highlight-button"),
@@ -984,6 +988,9 @@ function setLanguageChrome(lang) {
   els.nextChapterKicker.textContent = text.nextChapterKicker;
   els.annotationKicker.textContent = text.annotationKicker;
   els.annotationTitle.textContent = text.annotationTitle;
+  els.annotationPopover.setAttribute("aria-label", text.annotationTitle);
+  clearAnnotationStatusTimer();
+  els.annotationStatus.classList.remove("is-visible");
   els.annotationStatus.textContent = text.annotationStatus;
   [
     [els.highlightButton, text.annotationHighlight],
@@ -1008,6 +1015,7 @@ function setLanguageChrome(lang) {
 function setMode(mode, shouldUpdateUrl = true) {
   const modes = new Set(["planner", "schedule", "reader"]);
   state.mode = modes.has(mode) ? mode : "planner";
+  hideAnnotationPopover();
   els.body.dataset.mode = state.mode;
   els.plannerView.hidden = state.mode !== "planner";
   els.scheduleView.hidden = state.mode !== "schedule";
@@ -1168,6 +1176,7 @@ function applyReaderFocus() {
 function setReaderFocus(chapterIndex) {
   const next = Number(chapterIndex);
   state.focusedChapterIndex = Number.isInteger(next) && next >= 1 && next <= CHAPTER_COUNT ? next : null;
+  hideAnnotationPopover();
   applyReaderFocus();
   renderToc();
   observeHeadings();
@@ -1179,10 +1188,111 @@ function cssEscape(value) {
   return window.CSS?.escape ? CSS.escape(value) : String(value).replace(/["\\]/g, "\\$&");
 }
 
+function clearAnnotationStatusTimer() {
+  if (state.annotationStatusTimer) {
+    window.clearTimeout(state.annotationStatusTimer);
+    state.annotationStatusTimer = null;
+  }
+}
+
 function setAnnotationStatus(message) {
   if (els.annotationStatus) {
-    els.annotationStatus.textContent = message || copy[state.lang].annotationStatus;
+    clearAnnotationStatusTimer();
+    const fallback = copy[state.lang].annotationStatus;
+    const nextMessage = message || fallback;
+    els.annotationStatus.textContent = nextMessage;
+    els.annotationStatus.classList.toggle("is-visible", Boolean(message));
+
+    if (message) {
+      state.annotationStatusTimer = window.setTimeout(() => {
+        els.annotationStatus.classList.remove("is-visible");
+        els.annotationStatus.textContent = fallback;
+        state.annotationStatusTimer = null;
+      }, 2200);
+    }
   }
+}
+
+function selectionRangeInArticle() {
+  const selection = window.getSelection();
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null;
+
+  const range = selection.getRangeAt(0);
+  if (!range.toString().trim()) return null;
+  if (!els.article.contains(range.commonAncestorContainer)) return null;
+
+  return range;
+}
+
+function selectedRangeRect(range) {
+  const rects = [...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0);
+  return rects[0] || range.getBoundingClientRect();
+}
+
+function hideAnnotationPopover(options = {}) {
+  if (els.annotationPopover) {
+    els.annotationPopover.hidden = true;
+    els.annotationPopover.classList.remove("is-below");
+  }
+
+  if (options.keepRange) return;
+  state.annotationRange = null;
+}
+
+function positionAnnotationPopover(range) {
+  if (!els.annotationPopover || !range) return;
+
+  const rect = selectedRangeRect(range);
+  if (!rect || (rect.width <= 0 && rect.height <= 0)) {
+    hideAnnotationPopover();
+    return;
+  }
+
+  els.annotationPopover.hidden = false;
+  els.annotationPopover.classList.remove("is-below");
+
+  const popoverRect = els.annotationPopover.getBoundingClientRect();
+  const inset = 10;
+  const left = Math.min(
+    window.innerWidth - popoverRect.width / 2 - inset,
+    Math.max(popoverRect.width / 2 + inset, rect.left + rect.width / 2),
+  );
+  const shouldPlaceBelow = rect.top < popoverRect.height + 18;
+  const top = shouldPlaceBelow ? rect.bottom : rect.top;
+
+  els.annotationPopover.classList.toggle("is-below", shouldPlaceBelow);
+  els.annotationPopover.style.left = `${left}px`;
+  els.annotationPopover.style.top = `${Math.max(inset, top)}px`;
+}
+
+function updateAnnotationPopoverFromSelection() {
+  if (state.mode !== "reader" || els.article.classList.contains("loading")) {
+    hideAnnotationPopover();
+    return;
+  }
+
+  const range = selectionRangeInArticle();
+  if (!range) {
+    hideAnnotationPopover();
+    return;
+  }
+
+  state.annotationRange = range.cloneRange();
+  positionAnnotationPopover(range);
+}
+
+function scheduleAnnotationPopoverUpdate() {
+  window.setTimeout(updateAnnotationPopoverFromSelection, 0);
+}
+
+function annotationRangeForAction() {
+  const liveRange = selectionRangeInArticle();
+  if (liveRange) {
+    state.annotationRange = liveRange.cloneRange();
+    return liveRange.cloneRange();
+  }
+
+  return state.annotationRange ? state.annotationRange.cloneRange() : null;
 }
 
 function annotationStyleLabel(style) {
@@ -1377,15 +1487,9 @@ function renderAnnotationList() {
   const text = copy[state.lang];
   const annotations = annotationsForCurrentRange().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   els.annotationList.innerHTML = "";
+  els.readerShell?.classList.toggle("has-annotations", annotations.length > 0);
 
   if (!annotations.length) {
-    const empty = document.createElement("div");
-    empty.className = "annotation-card";
-    const message = document.createElement("p");
-    message.className = "annotation-card-comment";
-    message.textContent = text.annotationEmpty;
-    empty.append(message);
-    els.annotationList.append(empty);
     return;
   }
 
@@ -1453,13 +1557,12 @@ function renderAnnotations() {
 
 function createAnnotation(style) {
   const text = copy[state.lang];
-  const selection = window.getSelection();
-  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+  const range = annotationRangeForAction();
+  if (!range || range.collapsed) {
     setAnnotationStatus(text.annotationNeedSelection);
     return;
   }
 
-  const range = selection.getRangeAt(0);
   if (!els.article.contains(range.commonAncestorContainer)) {
     setAnnotationStatus(text.annotationOutside);
     return;
@@ -1514,7 +1617,9 @@ function createAnnotation(style) {
   state.annotations.push(annotation);
   state.activeAnnotationId = annotation.id;
   writeAnnotations();
-  selection.removeAllRanges();
+  const selection = window.getSelection();
+  selection?.removeAllRanges();
+  hideAnnotationPopover();
   renderAnnotations();
   setAnnotationStatus(text.annotationSaved);
 }
@@ -2648,13 +2753,26 @@ els.exportMatrixPdf.addEventListener("click", exportSchedulePdf);
 els.resetMatrix.addEventListener("click", resetMatrixProgress);
 els.search.addEventListener("input", renderToc);
 els.top.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+els.annotationPopover.addEventListener("mousedown", (event) => event.preventDefault());
+els.annotationPopover.addEventListener("click", (event) => event.stopPropagation());
 els.highlightButton.addEventListener("click", () => createAnnotation("highlight"));
 els.underlineButton.addEventListener("click", () => createAnnotation("underline"));
 els.commentButton.addEventListener("click", () => createAnnotation("comment"));
-window.addEventListener("scroll", updateReadingProgress, { passive: true });
+document.addEventListener("selectionchange", scheduleAnnotationPopoverUpdate);
+document.addEventListener("mouseup", scheduleAnnotationPopoverUpdate);
+document.addEventListener("keyup", scheduleAnnotationPopoverUpdate);
+document.addEventListener("pointerdown", (event) => {
+  if (event.target.closest("#annotation-popover") || event.target.closest("#guide-content")) return;
+  hideAnnotationPopover();
+});
+window.addEventListener("scroll", () => {
+  updateReadingProgress();
+  hideAnnotationPopover();
+}, { passive: true });
 window.addEventListener("resize", () => {
   updateFixedChromeMetrics();
   updateReadingProgress();
+  hideAnnotationPopover();
 });
 window.addEventListener("load", updateFixedChromeMetrics);
 window.visualViewport?.addEventListener("resize", updateFixedChromeMetrics);

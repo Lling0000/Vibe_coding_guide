@@ -1075,6 +1075,10 @@ button:disabled {
   align-items: start;
 }
 
+.reader-shell:not(.has-annotations) {
+  grid-template-columns: minmax(0, var(--reader-content));
+}
+
 .reader-column {
   min-width: 0;
 }
@@ -1263,6 +1267,10 @@ button:disabled {
   backdrop-filter: blur(14px);
 }
 
+.reader-shell:not(.has-annotations) .annotation-panel {
+  display: none;
+}
+
 .annotation-panel-head {
   display: grid;
   gap: 0.25rem;
@@ -1274,24 +1282,92 @@ button:disabled {
   line-height: 1.2;
 }
 
-.annotation-tools {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.45rem;
-}
-
-.annotation-tools .icon-button {
-  width: 100%;
-}
-
 .annotation-status {
-  min-height: 2.4rem;
-  padding: 0.62rem;
-  border: 1px dashed var(--line);
-  border-radius: var(--radius-sm);
-  color: var(--muted);
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 220;
+  max-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.68rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgb(255 255 255 / 94%);
+  box-shadow: var(--shadow);
+  color: var(--ink);
   font-size: 0.82rem;
-  line-height: 1.45;
+  font-weight: 760;
+  line-height: 1.4;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(0.45rem);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.annotation-status.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.annotation-popover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 230;
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0.28rem;
+  border: 1px solid rgb(180 197 192 / 88%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 95%);
+  box-shadow: 0 12px 30px rgb(29 37 40 / 17%);
+  backdrop-filter: blur(16px);
+  transform: translate(-50%, calc(-100% - 0.55rem));
+  transform-origin: center bottom;
+}
+
+.annotation-popover.is-below {
+  transform: translate(-50%, 0.55rem);
+  transform-origin: center top;
+}
+
+.annotation-popover::after {
+  position: absolute;
+  bottom: -0.36rem;
+  left: 50%;
+  width: 0.66rem;
+  height: 0.66rem;
+  border-right: 1px solid rgb(180 197 192 / 88%);
+  border-bottom: 1px solid rgb(180 197 192 / 88%);
+  background: rgb(255 255 255 / 95%);
+  content: "";
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.annotation-popover.is-below::after {
+  top: -0.36rem;
+  bottom: auto;
+  border: 0;
+  border-top: 1px solid rgb(180 197 192 / 88%);
+  border-left: 1px solid rgb(180 197 192 / 88%);
+}
+
+.annotation-popover .icon-button {
+  position: relative;
+  z-index: 1;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-color: transparent;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.annotation-popover .icon-button:hover {
+  border-color: var(--line);
+  background: var(--accent-soft);
 }
 
 .annotation-list {
