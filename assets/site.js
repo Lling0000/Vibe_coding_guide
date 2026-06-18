@@ -731,7 +731,8 @@ function preferredMode() {
   const requested = params.get("view") || params.get("mode");
   if (requested === "reader" || requested === "read") return "reader";
   if (requested === "schedule" || requested === "plan") return "schedule";
-  return "planner";
+  if (requested === "planner" || requested === "checklist") return "planner";
+  return "schedule";
 }
 
 function preferredDay() {
